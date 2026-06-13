@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Subtraction Practice — Worksheet 3</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  body {
+    font-family: "Comic Sans MS", "Century Gothic", Verdana, sans-serif;
+    font-size: 17pt;
+    color: #000;
+    line-height: 1.7;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    border-bottom: 3px solid #000;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    font-size: 24pt;
+  }
+  .name-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14pt;
+    margin-bottom: 24px;
+  }
+  .name-row span { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; }
+  h2 { font-size: 19pt; margin-top: 24px; margin-bottom: 12px; }
+
+  .blank {
+    display: inline-block;
+    border-bottom: 2px solid #000;
+    min-width: 70px;
+    height: 1.2em;
+  }
+  .word-blank {
+    display: inline-block;
+    border-bottom: 2px solid #000;
+    min-width: 130px;
+    height: 1.2em;
+    vertical-align: bottom;
+  }
+
+  .word-problem {
+    margin-bottom: 22px;
+    page-break-inside: avoid;
+    border-top: 1px dashed #aaa;
+    padding-top: 14px;
+  }
+  .word-problem:first-child { border-top: none; }
+  .word-problem .label { font-weight: bold; margin-right: 6px; }
+
+  .problem-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 10px 0;
+  }
+
+  .equation-boxes {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 24pt;
+    flex-shrink: 0;
+  }
+  .equation-boxes .box,
+  .equation-boxes .op {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid #000;
+    box-sizing: border-box;
+  }
+  .equation-boxes .op.circle { border-radius: 50%; }
+  .equation-boxes .equals { font-weight: bold; padding: 0 4px; }
+
+  .equation-given { font-size: 22pt; white-space: nowrap; flex-shrink: 0; }
+
+  .helper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    max-width: 52%;
+  }
+  .obj { width: 32px; height: 32px; vertical-align: middle; margin: 0 1px; }
+  .obj-sm { width: 26px; height: 26px; }
+  .container-icon { width: 48px; height: 48px; vertical-align: middle; margin-left: 8px; }
+
+  .group { display: inline-flex; align-items: center; flex-wrap: wrap; }
+  .group.removed { margin-left: 14px; }
+  .crossed { position: relative; display: inline-block; }
+  .crossed::after {
+    content: '\2715';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: bold;
+    color: #000;
+  }
+
+  .scene { position: relative; display: inline-block; vertical-align: middle; }
+  .scene .scene-objects {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 40px;
+  }
+  .grid .num { font-weight: bold; margin-right: 8px; }
+
+  .footer { text-align: center; font-size: 12pt; margin-top: 28px; color: #555; }
+
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Subtraction Practice &mdash; Worksheet 3</h1>
+<div class="name-row">
+  <div>Name: <span></span></div>
+  <div>Date: <span></span></div>
+</div>
+
+<h2>1. Solve the equations.</h2>
+<div class="grid" id="equations"></div>
+
+<h2>2. Solve the word problems.</h2>
+<div id="problems"></div>
+
+<div class="footer">
+  Great job! &nbsp; &nbsp;
+  <span style="font-size: 9pt;">Icons: Twemoji (Twitter, CC-BY 4.0)</span>
+</div>
+
+<div class="no-print" style="text-align:center; margin-top:20px;">
+  <button onclick="window.print()" style="font-size:14pt; padding:8px 20px;">Print Worksheet</button>
+</div>
+
+<script>
+const EQS = [[10,4],[8,7],[9,3],[7,6],[5,2]];
+
+// type 'given': pre-filled equation, helper shows BOTH sets (kept + crossed-out removed)
+// type 'boxes': empty boxes, helper shows ONE set only (count = show), optional container
+const PROBLEMS = [
+  { type:'given', m:8, s:4, obj:'1f36a',
+    lines:['There are 8 cookies on a plate.','4 cookies are eaten.'],
+    tail:'cookies left.' },
+  { type:'given', m:9, s:3, obj:'1f986', scene:'pond',
+    lines:['There are 9 ducks in a pond.','3 ducks swim away.'],
+    tail:'ducks left in the pond.' },
+  { type:'given', m:7, s:2, obj:'1f388',
+    lines:['There are 7 balloons.','2 of the balloons fly away.'],
+    tail:'balloons left.' },
+  { type:'given', m:10, s:6, obj:'1f420', scene:'tank',
+    lines:['There are 10 fish in a tank.','6 fish are taken out.'],
+    tail:'fish left in the tank.' },
+  { type:'boxes', show:5, obj:'1f34e', container:'1f9fa',
+    lines:['There are 9 apples altogether.','How many apples are in the basket?'],
+    tail:'apples in the basket.' },
+  { type:'boxes', show:8, obj:'1f697',
+    lines:['There are 8 cars in a car park.','3 cars drive away.'],
+    tail:'cars left in the car park.' },
+  { type:'boxes', show:4, obj:'1f36c', container:'1fad9',
+    lines:['There are 9 candies altogether.','How many candies are in the jar?'],
+    tail:'candies in the jar.' },
+  { type:'boxes', show:10, obj:'1f426',
+    lines:['There are 10 birds on a wire.','5 birds fly away.'],
+    tail:'birds left on the wire.' },
+  { type:'boxes', show:2, obj:'270f', container:'1f4e6',
+    lines:['There are 7 pencils altogether.','How many pencils are in the box?'],
+    tail:'pencils in the box.' },
+  { type:'boxes', show:6, obj:'1f98b',
+    lines:['There are 6 butterflies in the garden.','4 butterflies fly away.'],
+    tail:'butterflies left in the garden.' },
+];
+
+const TW = c => 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/' + c + '.svg';
+const img = (c, cls) => '<img class="' + (cls || 'obj') + '" src="' + TW(c) + '" alt="">';
+
+function group(c, n, opts) {
+  opts = opts || {};
+  const cls = opts.small ? 'obj obj-sm' : 'obj';
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    out += opts.crossed ? '<span class="crossed">' + img(c, cls) + '</span>' : img(c, cls);
+  }
+  return '<span class="group' + (opts.crossed ? ' removed' : '') + '">' + out + '</span>';
+}
+
+const SCENES = {
+  tank: inner =>
+    '<span class="scene" style="width:200px;height:84px;">' +
+    '<svg width="200" height="84" viewBox="0 0 200 84">' +
+    '<rect x="5" y="12" width="190" height="68" rx="6" fill="none" stroke="#000" stroke-width="2.5"/>' +
+    '<rect x="0" y="4" width="200" height="9" fill="#000"/>' +
+    '<path d="M 12 26 Q 60 31, 100 26 T 190 26" fill="none" stroke="#000" stroke-width="1"/>' +
+    '</svg><span class="scene-objects" style="top:14px;">' + inner + '</span></span>',
+  pond: inner =>
+    '<span class="scene" style="width:200px;height:80px;">' +
+    '<svg width="200" height="80" viewBox="0 0 200 80">' +
+    '<ellipse cx="100" cy="44" rx="95" ry="32" fill="none" stroke="#000" stroke-width="2"/>' +
+    '<path d="M 28 34 Q 60 38, 100 34 T 175 34" fill="none" stroke="#000" stroke-width="1"/>' +
+    '</svg><span class="scene-objects">' + inner + '</span></span>',
+};
+
+const boxesEq =
+  '<div class="equation-boxes"><span class="box"></span>' +
+  '<span class="op circle">&minus;</span><span class="box"></span>' +
+  '<span class="equals">=</span><span class="box"></span></div>';
+
+function helperHTML(p) {
+  const small = !!p.scene;
+  if (p.type === 'given') {
+    const kept = group(p.obj, p.m - p.s, { small: small });
+    const removed = group(p.obj, p.s, { crossed: true, small: small });
+    return (p.scene ? SCENES[p.scene](kept) : kept) + removed;
+  }
+  const shown = group(p.obj, p.show, { small: small });
+  return (p.scene ? SCENES[p.scene](shown) : shown) +
+         (p.container ? img(p.container, 'container-icon') : '');
+}
+
+document.getElementById('equations').innerHTML = EQS.map((e, i) =>
+  '<div><span class="num">' + (i + 1) + '.</span> ' + e[0] + ' &minus; ' + e[1] +
+  ' = <span class="blank"></span></div>').join('');
+
+document.getElementById('problems').innerHTML = PROBLEMS.map((p, i) => {
+  const eq = p.type === 'given'
+    ? '<div class="equation-given">' + p.m + ' &minus; ' + p.s + ' = <span class="blank"></span></div>'
+    : boxesEq;
+  return '<div class="word-problem">' +
+    '<span class="label">' + (i + 1) + '.</span> ' + p.lines[0] + '<br>' + p.lines[1] +
+    '<div class="problem-body">' + eq + '<div class="helper">' + helperHTML(p) + '</div></div>' +
+    'There are <span class="word-blank"></span> ' + p.tail +
+    '</div>';
+}).join('');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Subtraction Practice</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  body {
+    font-family: "Comic Sans MS", "Century Gothic", Verdana, sans-serif;
+    font-size: 17pt;
+    color: #000;
+    line-height: 1.7;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    border-bottom: 3px solid #000;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+  }
+  .name-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14pt;
+    margin-bottom: 24px;
+  }
+  .name-row span { border-bottom: 1px solid #000; display: inline-block; min-width: 180px; }
+  h2 {
+    font-size: 19pt;
+    margin-top: 24px;
+    margin-bottom: 12px;
+  }
+
+  .blank {
+    display: inline-block;
+    border-bottom: 2px solid #000;
+    min-width: 70px;
+    height: 1.2em;
+  }
+  .word-blank {
+    display: inline-block;
+    border-bottom: 2px solid #000;
+    min-width: 130px;
+    height: 1.2em;
+    vertical-align: bottom;
+  }
+
+  .word-problem {
+    margin-bottom: 22px;
+    page-break-inside: avoid;
+    border-top: 1px dashed #aaa;
+    padding-top: 14px;
+  }
+  .word-problem:first-of-type { border-top: none; }
+  .word-problem .label { font-weight: bold; margin-right: 6px; }
+
+  .problem-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 10px 0;
+  }
+
+  /* Equation: empty boxes with operator visible */
+  .equation-boxes {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 24pt;
+  }
+  .equation-boxes .box,
+  .equation-boxes .op {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid #000;
+    box-sizing: border-box;
+  }
+  .equation-boxes .op.circle { border-radius: 50%; }
+  .equation-boxes .equals { font-weight: bold; padding: 0 4px; }
+
+  /* Equation: pre-filled with answer blank */
+  .equation-given {
+    font-size: 22pt;
+    white-space: nowrap;
+  }
+
+  /* Helper visuals */
+  .helper {
+    flex-shrink: 0;
+    max-width: 50%;
+    text-align: right;
+  }
+  .obj {
+    width: 32px;
+    height: 32px;
+    vertical-align: middle;
+    margin: 0 1px;
+  }
+  .obj-sm { width: 26px; height: 26px; }
+  .container-icon {
+    width: 48px;
+    height: 48px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+
+  /* Scene: emoji laid over an inline SVG background */
+  .scene {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .scene .scene-objects {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 40px;
+  }
+  .grid .num { font-weight: bold; margin-right: 8px; }
+
+  .footer {
+    text-align: center;
+    font-size: 12pt;
+    margin-top: 28px;
+    color: #555;
+  }
+
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Subtraction Practice</h1>
+<div class="name-row">
+  <div>Name: <span></span></div>
+  <div>Date: <span></span></div>
+</div>
+
+<h2>1. Solve the equations.</h2>
+<div class="grid">
+  <div><span class="num">1.</span> 8 &minus; 3 = <span class="blank"></span></div>
+  <div><span class="num">2.</span> 7 &minus; 2 = <span class="blank"></span></div>
+  <div><span class="num">3.</span> 9 &minus; 5 = <span class="blank"></span></div>
+  <div><span class="num">4.</span> 6 &minus; 4 = <span class="blank"></span></div>
+  <div><span class="num">5.</span> 10 &minus; 6 = <span class="blank"></span></div>
+  <div><span class="num">6.</span> 8 &minus; 5 = <span class="blank"></span></div>
+  <div><span class="num">7.</span> 9 &minus; 7 = <span class="blank"></span></div>
+  <div><span class="num">8.</span> 7 &minus; 3 = <span class="blank"></span></div>
+  <div><span class="num">9.</span> 10 &minus; 3 = <span class="blank"></span></div>
+  <div><span class="num">10.</span> 5 &minus; 2 = <span class="blank"></span></div>
+  <div><span class="num">11.</span> 8 &minus; 6 = <span class="blank"></span></div>
+  <div><span class="num">12.</span> 9 &minus; 4 = <span class="blank"></span></div>
+  <div><span class="num">13.</span> 7 &minus; 5 = <span class="blank"></span></div>
+  <div><span class="num">14.</span> 10 &minus; 8 = <span class="blank"></span></div>
+  <div><span class="num">15.</span> 6 &minus; 3 = <span class="blank"></span></div>
+  <div><span class="num">16.</span> 9 &minus; 2 = <span class="blank"></span></div>
+  <div><span class="num">17.</span> 8 &minus; 4 = <span class="blank"></span></div>
+  <div><span class="num">18.</span> 10 &minus; 5 = <span class="blank"></span></div>
+  <div><span class="num">19.</span> 7 &minus; 6 = <span class="blank"></span></div>
+  <div><span class="num">20.</span> 9 &minus; 3 = <span class="blank"></span></div>
+</div>
+
+<h2>2. Solve the word problems.</h2>
+
+<!--
+  Twemoji CDN — open-source emoji (CC-BY 4.0).
+  All <img> sources point to: https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/<codepoint>.svg
+-->
+
+<!-- ===================== PROBLEMS 1–5 : equation given ===================== -->
+
+<div class="word-problem">
+  <span class="label">1.</span> There are 8 apples on a plate.<br>
+  3 of the apples are eaten.
+  <div class="problem-body">
+    <div class="equation-given">8 &minus; 3 = <span class="blank"></span></div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34e.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> apples left.
+</div>
+
+<div class="word-problem">
+  <span class="label">2.</span> There are 10 balloons.<br>
+  4 of the balloons fly away.
+  <div class="problem-body">
+    <div class="equation-given">10 &minus; 4 = <span class="blank"></span></div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f388.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> balloons left.
+</div>
+
+<div class="word-problem">
+  <span class="label">3.</span> There are 6 fish in a tank.<br>
+  1 fish is taken out.
+  <div class="problem-body">
+    <div class="equation-given">6 &minus; 1 = <span class="blank"></span></div>
+    <div class="helper">
+      <div class="scene" style="width: 220px; height: 90px;">
+        <!-- fish tank -->
+        <svg width="220" height="90" viewBox="0 0 220 90">
+          <rect x="6" y="14" width="208" height="74" rx="6" fill="none" stroke="#000" stroke-width="2.5"/>
+          <rect x="0" y="6" width="220" height="10" fill="#000"/>
+          <path d="M 12 28 Q 40 33, 70 28 T 130 28 T 210 28" fill="none" stroke="#000" stroke-width="1"/>
+        </svg>
+        <div class="scene-objects" style="top: 22px;">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f41f.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> fish left in the tank.
+</div>
+
+<div class="word-problem">
+  <span class="label">4.</span> There are 9 eggs in a basket.<br>
+  2 eggs are cracked.
+  <div class="problem-body">
+    <div class="equation-given">9 &minus; 2 = <span class="blank"></span></div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95a.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9fa.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> eggs left in the basket.
+</div>
+
+<div class="word-problem">
+  <span class="label">5.</span> There are 10 books on the shelf.<br>
+  3 books are borrowed.
+  <div class="problem-body">
+    <div class="equation-given">10 &minus; 3 = <span class="blank"></span></div>
+    <div class="helper">
+      <div class="scene" style="width: 230px; height: 70px;">
+        <!-- shelf -->
+        <svg width="230" height="70" viewBox="0 0 230 70">
+          <line x1="2" y1="58" x2="228" y2="58" stroke="#000" stroke-width="3"/>
+          <line x1="6" y1="58" x2="2" y2="68" stroke="#000" stroke-width="2"/>
+          <line x1="224" y1="58" x2="228" y2="68" stroke="#000" stroke-width="2"/>
+        </svg>
+        <div class="scene-objects" style="bottom: 14px; top: auto;">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d5.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d8.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d9.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d7.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d5.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d8.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d9.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d7.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d5.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4d8.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> books left on the shelf.
+</div>
+
+<!-- ===================== PROBLEMS 6–20 : empty boxes ===================== -->
+
+<div class="word-problem">
+  <span class="label">6.</span> There are 7 ducks in a pond.<br>
+  2 ducks swim away.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <div class="scene" style="width: 220px; height: 90px;">
+        <!-- pond -->
+        <svg width="220" height="90" viewBox="0 0 220 90">
+          <ellipse cx="110" cy="50" rx="105" ry="36" fill="none" stroke="#000" stroke-width="2"/>
+          <path d="M 30 38 Q 65 42, 110 38 T 195 38" fill="none" stroke="#000" stroke-width="1"/>
+          <path d="M 30 64 Q 65 68, 110 64 T 195 64" fill="none" stroke="#000" stroke-width="1"/>
+        </svg>
+        <div class="scene-objects">
+          <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f986.svg" alt="">
+          <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f986.svg" alt="">
+          <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f986.svg" alt="">
+          <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f986.svg" alt="">
+          <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f986.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> ducks left in the pond.
+</div>
+
+<div class="word-problem">
+  <span class="label">7.</span> There are 9 pencils altogether.<br>
+  How many pencils are in the box?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/270f.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/270f.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/270f.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/270f.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4e6.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> pencils in the box.
+</div>
+
+<div class="word-problem">
+  <span class="label">8.</span> There are 10 candies altogether.<br>
+  How many candies are in the bag?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f45d.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> candies in the bag.
+</div>
+
+<div class="word-problem">
+  <span class="label">9.</span> There are 9 birds on a branch.<br>
+  6 birds fly away.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <div class="scene" style="width: 260px; height: 70px;">
+        <!-- branch -->
+        <svg width="260" height="70" viewBox="0 0 260 70">
+          <path d="M 5 50 Q 80 45, 150 40 T 255 32" fill="none" stroke="#5a3a1a" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="scene-objects" style="bottom: 22px; top: auto;">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f426.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> birds left on the branch.
+</div>
+
+<div class="word-problem">
+  <span class="label">10.</span> There are 8 flowers in the garden.<br>
+  5 flowers are picked.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f338.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33b.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f337.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f338.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33c.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33b.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f337.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> flowers left in the garden.
+</div>
+
+<div class="word-problem">
+  <span class="label">11.</span> There are 7 cars altogether.<br>
+  How many cars are in the garage?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f697.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f697.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f697.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3e0.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> cars in the garage.
+</div>
+
+<div class="word-problem">
+  <span class="label">12.</span> There are 8 crayons altogether.<br>
+  How many crayons are in the case?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f58d.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f58d.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f58d.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f58d.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f58d.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4e6.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> crayons in the case.
+</div>
+
+<div class="word-problem">
+  <span class="label">13.</span> There are 10 cupcakes.<br>
+  7 cupcakes are eaten.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9c1.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9c1.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9c1.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> cupcakes left.
+</div>
+
+<div class="word-problem">
+  <span class="label">14.</span> There are 9 stars altogether.<br>
+  How many stars are behind the cloud?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2b50.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2601.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> stars behind the cloud.
+</div>
+
+<div class="word-problem">
+  <span class="label">15.</span> There are 10 marbles altogether.<br>
+  How many marbles are in the pouch?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f535.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f7e2.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f534.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f7e1.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f7e3.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f7e0.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f535.svg" alt="">
+      <img class="container-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f45d.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> marbles in the pouch.
+</div>
+
+<div class="word-problem">
+  <span class="label">16.</span> There are 7 frogs on a log.<br>
+  4 frogs hop away.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <div class="scene" style="width: 240px; height: 80px;">
+        <!-- log -->
+        <svg width="240" height="80" viewBox="0 0 240 80">
+          <rect x="6" y="42" width="228" height="30" rx="14" fill="#f4e4cc" stroke="#000" stroke-width="2"/>
+          <ellipse cx="20" cy="57" rx="6" ry="13" fill="none" stroke="#000" stroke-width="1.5"/>
+          <line x1="60" y1="42" x2="60" y2="72" stroke="#000" stroke-width="1"/>
+          <line x1="120" y1="42" x2="120" y2="72" stroke="#000" stroke-width="1"/>
+          <line x1="180" y1="42" x2="180" y2="72" stroke="#000" stroke-width="1"/>
+        </svg>
+        <div class="scene-objects" style="bottom: 30px; top: auto;">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f438.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> frogs left on the log.
+</div>
+
+<div class="word-problem">
+  <span class="label">17.</span> There are 8 leaves on a branch.<br>
+  6 leaves fall down.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <div class="scene" style="width: 260px; height: 70px;">
+        <svg width="260" height="70" viewBox="0 0 260 70">
+          <path d="M 5 50 Q 80 45, 150 40 T 255 32" fill="none" stroke="#5a3a1a" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="scene-objects" style="bottom: 22px; top: auto;">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+          <img class="obj obj-sm" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f343.svg" alt="">
+        </div>
+      </div>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> leaves left on the branch.
+</div>
+
+<div class="word-problem">
+  <span class="label">18.</span> There are 9 strawberries on a plate.<br>
+  5 strawberries are eaten.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> strawberries left.
+</div>
+
+<div class="word-problem">
+  <span class="label">19.</span> There are 8 cookies altogether.<br>
+  How many cookies are in the jar?
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36a.svg" alt="">
+      <!-- inline SVG jar -->
+      <svg width="56" height="60" viewBox="0 0 56 60" style="vertical-align: middle; margin-left: 8px;">
+        <rect x="14" y="4" width="28" height="8" fill="none" stroke="#000" stroke-width="2" rx="2"/>
+        <path d="M 10 14 L 10 50 Q 10 56, 16 56 L 40 56 Q 46 56, 46 50 L 46 14 Z" fill="none" stroke="#000" stroke-width="2"/>
+        <line x1="10" y1="20" x2="46" y2="20" stroke="#000" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+  There are <span class="word-blank"></span> cookies in the jar.
+</div>
+
+<div class="word-problem">
+  <span class="label">20.</span> There are 10 oranges in a bowl.<br>
+  6 oranges are given away.
+  <div class="problem-body">
+    <div class="equation-boxes">
+      <span class="box"></span>
+      <span class="op circle">&minus;</span>
+      <span class="box"></span>
+      <span class="equals">=</span>
+      <span class="box"></span>
+    </div>
+    <div class="helper">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+      <img class="obj" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f34a.svg" alt="">
+    </div>
+  </div>
+  There are <span class="word-blank"></span> oranges left in the bowl.
+</div>
+
+<div class="footer">
+  Great job! &nbsp; &nbsp;
+  <span style="font-size: 9pt;">Icons: Twemoji (Twitter, CC-BY 4.0)</span>
+</div>
+
+<div class="no-print" style="text-align:center; margin-top:20px;">
+  <button onclick="window.print()" style="font-size:14pt; padding:8px 20px;">Print Worksheet</button>
+</div>
+
+</body>
+</html>

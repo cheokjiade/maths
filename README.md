@@ -1,0 +1,37 @@
+# Maths — Subtraction Worksheet Generator
+
+A single self-contained static page (`index.html`) that generates printable subtraction
+worksheets for young children. No build step, no dependencies — emoji pictures are bundled
+locally in `assets/twemoji/` (Twemoji, CC-BY 4.0), so it works fully offline.
+
+## Use it
+
+Open `index.html` in a browser, or host it on GitHub Pages and visit the URL.
+
+- **Generate** a worksheet from a **seed** — the same seed always produces the same sheet,
+  so you can re-print or share an exact worksheet via its link.
+- Children can type answers and press **Submit & Mark** for instant on-screen marking
+  (accepts digits or spelled-out numbers), or just **Print** and work on paper.
+
+## Configuration (URL parameters)
+
+| Param  | Meaning                          | Default |
+|--------|----------------------------------|---------|
+| `seed` | any word/number (reproducible)   | `1`     |
+| `max`  | largest number used (10–25)      | `10`    |
+| `zero` | allow `0` answers (`0`/`1`)      | `0`     |
+| `bare` | number of plain equations        | `5`     |
+| `given`| pre-filled-equation problems     | `4`     |
+| `btk`  | empty-box take-away problems     | `3`     |
+| `pw`   | empty-box part-whole problems    | `3`     |
+
+Example: `index.html?seed=janelle&max=12&given=4&pw=3`
+
+## Question types
+
+1. **Equations** — `M − S = ___`
+2. **Given + take-away** — equation shown, picture shows both groups (kept + crossed-out)
+3. **Boxes + take-away** — empty boxes, picture shows the whole group
+4. **Boxes + part-whole** — empty boxes, picture shows the visible part plus a container
+
+Pictures: [Twemoji](https://github.com/twitter/twemoji) by Twitter, licensed CC-BY 4.0.
