@@ -78,22 +78,39 @@ const groupMode = balanced(['size','colour','shape']);  // spread size/colour/sh
 
 /* ---------- shape SVG library ---------- */
 const SHAPES=['rectangle','square','circle','triangle','half circle','quarter circle'];
-function shapeBody(kind,fill){
+// Each shape has several prototypes so a child meets, e.g., wide/tall/thin/squat rectangles and
+// isosceles/right/scalene triangles — not one fixed picture. Concept-forming variety, not cosmetic.
+// (Squares and circles stay one prototype — their identity IS the fixed proportion; size + tilt vary them.)
+const SHAPE_VARIANTS={
+  rectangle:[
+    f=>'<rect x="6" y="30" width="88" height="40" '+f+'/>',   // wide
+    f=>'<rect x="30" y="6" width="40" height="88" '+f+'/>',   // tall (portrait)
+    f=>'<rect x="4" y="40" width="92" height="22" '+f+'/>',   // long & thin
+    f=>'<rect x="18" y="24" width="64" height="54" '+f+'/>',  // squat
+  ],
+  triangle:[
+    f=>'<polygon points="50,10 90,86 10,86" '+f+'/>',         // isosceles, point up
+    f=>'<polygon points="14,14 14,86 86,86" '+f+'/>',         // right-angled
+    f=>'<polygon points="50,8 86,86 26,86" '+f+'/>',          // scalene
+    f=>'<polygon points="12,86 88,86 66,18" '+f+'/>',         // scalene, leaning
+  ],
+  square:[ f=>'<rect x="20" y="20" width="60" height="60" '+f+'/>' ],
+  circle:[ f=>'<circle cx="50" cy="50" r="40" '+f+'/>' ],
+  'half circle':[ f=>'<path d="M12,62 A38,38 0 0 1 88,62 Z" '+f+'/>' ],
+  'quarter circle':[ f=>'<path d="M20,82 L82,82 A62,62 0 0 0 20,20 Z" '+f+'/>' ],
+};
+function nVariants(kind){ return (SHAPE_VARIANTS[kind]||[0]).length; }
+function shapeBody(kind,fill,variant){
   const f='fill="'+(fill||'#fff')+'" stroke="#000" stroke-width="3" stroke-linejoin="round"';
-  switch(kind){
-    case 'rectangle': return '<rect x="6" y="28" width="88" height="44" '+f+'/>';
-    case 'square': return '<rect x="20" y="20" width="60" height="60" '+f+'/>';
-    case 'circle': return '<circle cx="50" cy="50" r="40" '+f+'/>';
-    case 'triangle': return '<polygon points="50,10 90,86 10,86" '+f+'/>';
-    case 'half circle': return '<path d="M12,62 A38,38 0 0 1 88,62 Z" '+f+'/>';
-    case 'quarter circle': return '<path d="M20,82 L82,82 A62,62 0 0 0 20,20 Z" '+f+'/>';
-  }
-  return '';
+  const vs=SHAPE_VARIANTS[kind]; if(!vs) return '';
+  return vs[(variant||0)%vs.length](f);
 }
 function shapeSVG(kind,opts){
   opts=opts||{}; const sz=opts.size||54; const rot=opts.rot||0; const fill=opts.fill||'#fff';
-  return '<svg class="shp" width="'+sz+'" height="'+sz+'" viewBox="0 0 100 100"><g transform="rotate('+rot+' 50 50)">'+shapeBody(kind,fill)+'</g></svg>';
+  return '<svg class="shp" width="'+sz+'" height="'+sz+'" viewBox="0 0 100 100"><g transform="rotate('+rot+' 50 50)">'+shapeBody(kind,fill,opts.variant||0)+'</g></svg>';
 }
+// loose rendering for free-standing shapes: random size, tilt and prototype (so each instance differs)
+function looseOpts(kind,extra){ const o={ size:randInt(40,58), rot:pick([0,15,30,-15,-30,45]), variant:randInt(0,nVariants(kind)-1) }; for(const k in (extra||{})) o[k]=extra[k]; return o; }
 const COLOURS=['#f6c0c0','#bcd6f6','#bfe7c2','#f6e3a8','#d9c2ee'];
 
 /* ---------- input/select factories ---------- */
@@ -108,16 +125,16 @@ function selBlock(mode,options){
 
 /* ---------- markable generators ---------- */
 function gName(i){
-  const k=pick(SHAPES); const n=randInt(3,5);
-  let row='<div class="shape-row">'; for(let j=0;j<n;j++) row+=shapeSVG(k,{size:randInt(40,64),rot:pick([0,0,15,30,45,-20])}); row+='</div>';
+  const k=namePick(i); const n=randInt(3,5);
+  let row='<div class="shape-row">'; for(let j=0;j<n;j++) row+=shapeSVG(k,looseOpts(k,{size:randInt(40,64)})); row+='</div>';
   return '<div class="item"><div class="qrow"><div>'+row+'</div><div>This shape is a '+nameIn(k)+'.</div></div></div>';
 }
 function gMatch(i){
-  const target=pick(SHAPES); const others=shuffle(SHAPES.filter(s=>s!==target));
+  const target=matchTarget(i); const others=shuffle(SHAPES.filter(s=>s!==target));
   const opts=[];
   const nTarget=randInt(2,3);
-  for(let j=0;j<nTarget;j++) opts.push({html:shapeSVG(target,{size:46,rot:pick([0,20,40])}),ok:true,shape:true});
-  for(let j=0;j<5-nTarget;j++) opts.push({html:shapeSVG(others[j%others.length],{size:46,rot:pick([0,20,40])}),ok:false,shape:true});
+  for(let j=0;j<nTarget;j++) opts.push({html:shapeSVG(target,looseOpts(target)),ok:true,shape:true});
+  for(let j=0;j<5-nTarget;j++){ const s=others[j%others.length]; opts.push({html:shapeSVG(s,looseOpts(s)),ok:false,shape:true}); }
   return '<div class="item"><span class="label">'+i+'.</span> Colour (tap) every <b>'+target+'</b>.'+selBlock('many',shuffle(opts))+'</div>';
 }
 function gCount(i){
@@ -125,7 +142,7 @@ function gCount(i){
   kinds.forEach(k=>{ const c=randInt(0,4); counts[k]=c; for(let j=0;j<c;j++) pool.push(k); });
   if(pool.length<3){ const k=pick(kinds); counts[k]+=3; for(let j=0;j<3;j++) pool.push(k); }
   pool=shuffle(pool);
-  let box='<div class="pic-box">'; pool.forEach(k=>box+=shapeSVG(k,{size:40,rot:pick([0,0,15,30])})); box+='</div>';
+  let box='<div class="pic-box">'; pool.forEach(k=>box+=shapeSVG(k,looseOpts(k,{size:randInt(34,44)}))); box+='</div>';
   let qs=''; kinds.forEach(k=>{ qs+='<div>There is/are '+numIn(counts[k])+' '+k+'(s).</div>'; });
   return '<div class="item"><span class="label">'+i+'.</span> This picture is made of many shapes. Count them.<div class="qrow" style="align-items:flex-start;"><div>'+qs+'</div>'+box+'</div></div>';
 }
@@ -143,15 +160,23 @@ function gGroup(i){
   const opts=['size','colour','shape'].map(m=>({html:m,ok:m===mode}));
   return '<div class="item"><span class="label">'+i+'.</span> How are these shapes grouped?<div class="qrow">'+boxOf('A')+boxOf('B')+'</div><div style="margin-top:8px;">They are grouped by '+selBlock('one',opts)+'</div></div>';
 }
+// Composites are stored as ONE outer silhouette path (so the two parts always align by construction)
+// plus the seam line. gCompose draws outline+seam (two parts to name); gPart draws outline only
+// (the child draws the seam). Each parts-pair is unique, so balanced() gives duplicate-free sheets.
 const COMPOSITES=[
-  {parts:['half circle','triangle'], svg:'<svg width="150" height="90" viewBox="0 0 150 90"><path d="M10,70 A30,30 0 0 1 70,70 Z" fill="#ddd" stroke="#000" stroke-width="2"/><polygon points="70,40 140,55 70,70" fill="#ddd" stroke="#000" stroke-width="2"/></svg>'},
-  {parts:['rectangle','triangle'], svg:'<svg width="120" height="110" viewBox="0 0 120 110"><polygon points="60,10 105,45 15,45" fill="#ddd" stroke="#000" stroke-width="2"/><rect x="20" y="45" width="80" height="55" fill="#ddd" stroke="#000" stroke-width="2"/></svg>'},
-  {parts:['square','quarter circle'], svg:'<svg width="140" height="100" viewBox="0 0 140 100"><rect x="10" y="20" width="70" height="70" fill="#ddd" stroke="#000" stroke-width="2"/><path d="M80,90 L80,20 A70,70 0 0 1 150,90 Z" fill="#ddd" stroke="#000" stroke-width="2" transform="translate(0,0)"/></svg>'},
-  {parts:['rectangle','half circle'], svg:'<svg width="120" height="120" viewBox="0 0 120 120"><rect x="25" y="20" width="70" height="50" fill="#ddd" stroke="#000" stroke-width="2"/><path d="M25,70 A35,35 0 0 0 95,70 Z" fill="#ddd" stroke="#000" stroke-width="2"/></svg>'},
+  {parts:['rectangle','triangle'],    outline:'M20,95 L20,50 L50,12 L80,50 L80,95 Z',          divider:[20,50,80,50]}, // house
+  {parts:['rectangle','half circle'], outline:'M22,95 L22,45 A28,28 0 0 1 78,45 L78,95 Z',      divider:[22,45,78,45]}, // arch
+  {parts:['square','quarter circle'], outline:'M12,70 L12,30 L52,30 A40,40 0 0 1 92,70 Z',      divider:[52,30,52,70]},
+  {parts:['triangle','half circle'],  outline:'M22,48 A28,28 0 0 1 78,48 L50,92 Z',             divider:[22,48,78,48]}, // ice-cream
 ];
+function compFig(c,showSeam){
+  const f='fill="#fff" stroke="#000" stroke-width="3" stroke-linejoin="round"';
+  const seam=showSeam ? '<line x1="'+c.divider[0]+'" y1="'+c.divider[1]+'" x2="'+c.divider[2]+'" y2="'+c.divider[3]+'" stroke="#000" stroke-width="2"/>' : '';
+  return '<svg class="shp" width="116" height="116" viewBox="0 0 100 100"><path d="'+c.outline+'" '+f+'/>'+seam+'</svg>';
+}
 function gCompose(i){
-  const c=pick(COMPOSITES);
-  return '<div class="item"><span class="label">'+i+'.</span> This figure is made of two shapes. Name them.<div class="qrow">'+c.svg+
+  const c=composePick(i);
+  return '<div class="item"><span class="label">'+i+'.</span> This figure is made of two shapes. Name them.<div class="qrow">'+compFig(c,true)+
     '<div data-compose="1">'+nameIn(c.parts[0])+' and '+nameIn(c.parts[1])+'</div></div></div>';
 }
 const OBJECTS=[
@@ -161,7 +186,7 @@ const OBJECTS=[
   {svg:'<svg width="80" height="80" viewBox="0 0 100 100"><polygon points="50,12 86,86 14,86" fill="#dfe" stroke="#000" stroke-width="3"/></svg>', ans:'triangle', label:'party hat'},
 ];
 function gObject(i){
-  const o=pick(OBJECTS);
+  const o=objPick(i);
   const opts=shuffle(['rectangle','square','circle','triangle']).map(s=>({html:s,ok:s===o.ans}));
   return '<div class="item"><span class="label">'+i+'.</span> What shape is the '+o.label+'? <span style="vertical-align:middle;">'+o.svg+'</span>'+selBlock('one',opts)+'</div>';
 }
@@ -178,7 +203,7 @@ const FIGS=[
 function pathToSegs(path){ const s=[]; for(let i=0;i<path.length-1;i++) s.push([path[i],path[i+1]]); return s; }
 const gridState={};
 function gGrid(i){
-  const segs=pathToSegs(pick(FIGS)); const cols=6, rows=6, step=34, pad=14;
+  const segs=pathToSegs(figPick(i)); const cols=6, rows=6, step=34, pad=14;
   const id='g'+(uid++);
   gridState[id]={segs:segs, user:[], sel:null, step:step, pad:pad, cols:cols, rows:rows};
   const W=pad*2+(cols-1)*step, H=pad*2+(rows-1)*step;
@@ -192,10 +217,16 @@ function gGrid(i){
 }
 
 /* ---------- print-only ---------- */
-function gDraw(i){ const k=pick(SHAPES); return '<div class="item" style="display:inline-block;margin-right:18px;"><div class="drawbox"><div class="cap">'+i+'. Draw a <b>'+k+'</b></div></div></div>'; }
+function gDraw(i){ const k=drawPick(i); return '<div class="item" style="display:inline-block;margin-right:18px;"><div class="drawbox"><div class="cap">'+i+'. Draw a <b>'+k+'</b></div></div></div>'; }
 function gPart(i){
-  const c=pick(COMPOSITES);
-  return '<div class="item"><span class="label">'+i+'.</span> Draw lines to show this figure is formed by a <b>'+c.parts[0]+'</b> and a <b>'+c.parts[1]+'</b>.<div class="qrow">'+c.svg.replace(/fill="#ddd"/g,'fill="#fff"')+'</div></div>'; }
+  const c=partPick(i);
+  return '<div class="item"><span class="label">'+i+'.</span> Draw a line to show this figure is formed by a <b>'+c.parts[0]+'</b> and a <b>'+c.parts[1]+'</b>.<div class="qrow">'+compFig(c,false)+'</div></div>'; }
+
+/* ---------- per-section variety: spread each pool across its questions ---------- */
+// balanced() => shuffled round-robin keyed by question number, so questions don't repeat while count <= pool size
+const namePick=balanced(SHAPES), matchTarget=balanced(SHAPES), drawPick=balanced(SHAPES);
+const objPick=balanced(OBJECTS), figPick=balanced(FIGS);
+const composePick=balanced(COMPOSITES), partPick=balanced(COMPOSITES);
 
 /* ---------- assemble ---------- */
 function section(title,count,fn){ if(count<=0) return ''; let b=''; for(let i=0;i<count;i++) b+=fn(i+1); return '<h2>'+title+'</h2>'+b; }
@@ -220,20 +251,29 @@ function redrawGrid(id){
   svg.querySelectorAll('.gdot').forEach(d=>d.classList.remove('sel'));
   if(st.sel){ svg.querySelectorAll('.gdot').forEach(d=>{ if(Math.abs(+d.getAttribute('cx')-(st.pad+st.sel[0]*st.step))<2 && Math.abs(+d.getAttribute('cy')-(st.pad+st.sel[1]*st.step))<2) d.classList.add('sel'); }); }
 }
+// transient rubber-band line shown while dragging (snaps blue to the nearest dot when close)
+function rubber(id,x1,y1,x2,y2,snap){ const svg=document.getElementById(id); if(!svg) return; let r=svg.querySelector('.grubber');
+  if(!r){ r=document.createElementNS('http://www.w3.org/2000/svg','line'); r.setAttribute('class','grubber'); r.setAttribute('pointer-events','none'); r.setAttribute('stroke-linecap','round'); svg.appendChild(r); }
+  r.setAttribute('x1',x1); r.setAttribute('y1',y1); r.setAttribute('x2',x2); r.setAttribute('y2',y2);
+  r.setAttribute('stroke', snap?'#2563eb':'#9fb4c9'); r.setAttribute('stroke-width','3'); r.setAttribute('stroke-dasharray', snap?'':'5 5'); }
+function rubberOff(id){ const svg=document.getElementById(id); const r=svg&&svg.querySelector('.grubber'); if(r) r.remove(); }
 document.querySelectorAll('svg[data-grid]').forEach(svg=>{
-  const id=svg.id; const st=gridState[id];
-  svg.querySelectorAll('.ghit').forEach(h=>h.addEventListener('click',()=>{
-    const x=+h.dataset.gx, y=+h.dataset.gy;
-    if(!st.sel){ st.sel=[x,y]; }
-    else if(st.sel[0]===x && st.sel[1]===y){ st.sel=null; }
-    else {
-      const key=segKey(st.sel,[x,y]);
-      const idx=st.user.findIndex(s=>segKey(s.a,s.b)===key);
-      if(idx>=0) st.user.splice(idx,1); else st.user.push({a:st.sel.slice(),b:[x,y]});
-      st.sel=null;
-    }
-    redrawGrid(id);
-  }));
+  const id=svg.id, st=gridState[id];
+  const DX=p=>st.pad+p[0]*st.step, DY=p=>st.pad+p[1]*st.step;
+  function localXY(ev){ const vb=svg.viewBox.baseVal, r=svg.getBoundingClientRect(); return [ vb.x+(ev.clientX-r.left)/r.width*vb.width, vb.y+(ev.clientY-r.top)/r.height*vb.height ]; }
+  function nearest(x,y){ let best=null,bd=1e9; for(let gy=0;gy<st.rows;gy++)for(let gx=0;gx<st.cols;gx++){ const d=(st.pad+gx*st.step-x)*(st.pad+gx*st.step-x)+(st.pad+gy*st.step-y)*(st.pad+gy*st.step-y); if(d<bd){bd=d; best=[gx,gy];} } return {dot:best, d2:bd}; }
+  function toggle(a,b){ const key=segKey(a,b); const idx=st.user.findIndex(s=>segKey(s.a,s.b)===key); if(idx>=0) st.user.splice(idx,1); else st.user.push({a:a.slice(),b:b.slice()}); }
+  function tap(a){ if(!st.sel){ st.sel=a; } else if(st.sel[0]===a[0]&&st.sel[1]===a[1]){ st.sel=null; } else { toggle(st.sel,a); st.sel=null; } }
+  let drag=null; const T2=st.step*0.45*(st.step*0.45), C2=st.step*0.55*(st.step*0.55);
+  svg.addEventListener('pointerdown',ev=>{ const h=ev.target.closest('.ghit'); if(!h) return; drag={a:[+h.dataset.gx,+h.dataset.gy], moved:false}; try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove',ev=>{ if(!drag) return; const xy=localXY(ev), dx=DX(drag.a)-xy[0], dy=DY(drag.a)-xy[1];
+    if(dx*dx+dy*dy>25) drag.moved=true; if(!drag.moved) return;
+    const n=nearest(xy[0],xy[1]), snap=n.d2<T2, ex=snap?DX(n.dot):xy[0], ey=snap?DY(n.dot):xy[1]; rubber(id,DX(drag.a),DY(drag.a),ex,ey,snap); });
+  svg.addEventListener('pointerup',ev=>{ if(!drag) return; rubberOff(id); const a=drag.a;
+    if(drag.moved){ const xy=localXY(ev), n=nearest(xy[0],xy[1]); if(n.d2<C2 && !(n.dot[0]===a[0]&&n.dot[1]===a[1])){ toggle(a,n.dot); st.sel=null; } }
+    else tap(a);
+    drag=null; redrawGrid(id); });
+  svg.addEventListener('pointercancel',()=>{ drag=null; rubberOff(id); redrawGrid(id); });
 });
 
 /* ---------- shape-name marking + custom markers (shared engine) ---------- */
