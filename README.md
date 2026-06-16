@@ -9,6 +9,10 @@ for young children. No build step, no dependencies — emoji pictures are bundle
 - `addition.html` — the addition worksheet generator (sums within 10): number bonds,
   picture sums, "…make…" and missing-number questions, commutative pairs, word problems,
   and an interactive colour-the-matching-sums exercise. Same seed/marking/print model.
+- `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
+  half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
+  an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by
+  segment match). Print-only draw and partition exercises too.
 
 To add a topic later, drop a new page at the repo root (so it shares `assets/`) and add a
 card for it in `index.html`.
