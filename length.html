@@ -29,9 +29,14 @@
   .barwrap, .curvewrap, .nonstdwrap { border:1.5px solid #aaa; border-radius:8px; padding:8px 10px; display:inline-block; background:#fff; }
   .blanks { margin-top:8px; font-size:14pt; }
   .blanks div { margin:6px 0; }
+  /* draw-a-line (print-only): a baseline with a start dot to draw from with a ruler */
+  .drawbox { min-height:42px; margin:8px 0 4px; display:flex; align-items:center; gap:10px; border-bottom:1px dotted #bbb; padding-bottom:6px; }
+  .dotstart { font-size:11px; }
+  svg.refseg { vertical-align:middle; }
   @media print {
     .rl-body { fill:#fff; }
     .barwrap, .curvewrap, .nonstdwrap { border-color:#000; }
+    .drawbox { min-height:16mm; border-bottom-color:#000; }
   }
 </style>
 </head>
@@ -49,6 +54,7 @@
       <label data-tip="Drag (or tap) the bars A–D into order, shortest to longest.">Order <input type="number" id="f-order" min="0" max="20"></label>
       <label data-tip="Three lines of the same width — which is the longest?">Curves <input type="number" id="f-curves" min="0" max="20"></label>
       <label data-tip="Is an everyday object longer or shorter than 1 metre?">More/less than 1 m <input type="number" id="f-benchmark" min="0" max="20"></label>
+      <label data-tip="Print-only: draw straight lines &amp; curves of a given length with a ruler (not marked on screen).">Draw lines (print) <input type="number" id="f-draw" min="0" max="20"></label>
     </div>
     <div class="btns">
       <button class="go" id="b-apply">Generate</button>
@@ -74,7 +80,8 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   ruler:WS.clamp(WS.toInt(WS.Q.get('ruler'),3),0,20), nonstd:WS.clamp(WS.toInt(WS.Q.get('nonstd'),3),0,20),
   compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20), extremes:WS.clamp(WS.toInt(WS.Q.get('extremes'),3),0,20),
   order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20), curves:WS.clamp(WS.toInt(WS.Q.get('curves'),2),0,20),
-  benchmark:WS.clamp(WS.toInt(WS.Q.get('benchmark'),4),0,20) };
+  benchmark:WS.clamp(WS.toInt(WS.Q.get('benchmark'),4),0,20),
+  draw:WS.clamp(WS.toInt(WS.Q.get('draw'),4),0,20) };
 const rng=WS.makeRng(cfg.seed);
 const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 
@@ -322,6 +329,33 @@ function gBenchmark(i){
   return html;
 }
 
+// 8. Draw lines/curves of a given length — PRINT-ONLY (no on-screen marking; use a ruler on the printout).
+const DRAWSEG=['MN','XY','PQ','RS','JK','UV','CD','GH','LT','BW'];
+const drawVar=balanced(['exact','exact','longer','shorter','curve']);
+let segCount=0; const drawUsed=new Set();
+function segSVG(lab,L){ const CM=15, x0=14, x1=14+L*CM, y=21, W=x1+16;
+  return '<svg class="refseg" width="'+W+'" height="30" viewBox="0 0 '+W+' 30">'
+    +'<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>'
+    +'<circle cx="'+x0+'" cy="'+y+'" r="2.5"/><circle cx="'+x1+'" cy="'+y+'" r="2.5"/>'
+    +'<text x="'+x0+'" y="13" text-anchor="middle" font-family="Comic Sans MS,sans-serif" font-size="11" font-weight="bold">'+lab[0]+'</text>'
+    +'<text x="'+x1+'" y="13" text-anchor="middle" font-family="Comic Sans MS,sans-serif" font-size="11" font-weight="bold">'+lab[1]+'</text></svg>'; }
+function gDraw(i){
+  const v=drawVar(i); let text='', seg='', key='', g=0, N, L, K, lab;
+  do{
+    if(v==='exact'){ N=randInt(3,10); key='e'+N; }
+    else { lab=DRAWSEG[segCount%DRAWSEG.length]; L=randInt(3,7); K=(v==='shorter')?randInt(1,L-1):randInt(1,4); key=v+lab; }
+  } while(drawUsed.has(key) && g++<40);
+  drawUsed.add(key);
+  if(v==='exact'){ text='Draw a straight line <b>'+N+' cm</b> long.'; }
+  else { segCount++; seg=segSVG(lab,L);
+    text = v==='longer' ? 'Draw a line <b>'+K+' cm longer</b> than line '+lab+'.'
+         : v==='shorter' ? 'Draw a line <b>'+K+' cm shorter</b> than line '+lab+'.'
+         : 'Draw a <b>curve</b> that is longer than line '+lab+'.'; }
+  return '<div class="item"><span class="label">'+i+'.</span> '+text
+    + (seg?'<div class="lenvis">'+seg+'</div>':'')
+    + '<div class="drawbox"><span class="dotstart">&#9679;</span></div></div>';
+}
+
 /* ---------- assemble ---------- */
 function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
 let html='';
@@ -332,6 +366,7 @@ html+=section('Find the longest and the shortest.', cfg.extremes, gExtremes);
 html+=section('Order the strips by length.', cfg.order, gOrder);
 html+=section('Compare the lines.', cfg.curves, gCurves);
 html+=section('Longer or shorter than 1 metre?', cfg.benchmark, gBenchmark);
+html+=section('Draw the lines (print, then draw with a ruler).', cfg.draw, gDraw);
 document.getElementById('sheet').innerHTML=html;
 document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  length: measure, compare & order';
 
@@ -339,7 +374,7 @@ document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  length: me
 WS.addKind('letter', (v,a)=>String(v).trim().toUpperCase()===String(a).trim().toUpperCase());
 WS.wireChips();
 WS.enableDragOrder();
-WS.wirePanel(cfg, ['ruler','nonstd','compare','extremes','order','curves','benchmark'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
+WS.wirePanel(cfg, ['ruler','nonstd','compare','extremes','order','curves','benchmark','draw'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
 </script>
 </body>
 </html>

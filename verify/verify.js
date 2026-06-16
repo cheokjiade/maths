@@ -31,7 +31,7 @@ const TARGETS = [
   { name: 'within100',   file: 'within100.html',
     params: 'seed=verify&place=1&coladd=1&colsub=1&add=2&sub=2&three=1&tens=1&word=2' },
   { name: 'length',      file: 'length.html',
-    params: 'seed=verify&ruler=2&nonstd=2&compare=2&extremes=1&order=1&curves=1&benchmark=2' },
+    params: 'seed=verify&ruler=2&nonstd=2&compare=2&extremes=1&order=1&curves=1&benchmark=2&draw=2' },
   { name: 'multiplication', file: 'multiplication.html', params: 'seed=verify&groups=1&write=2&multiply=2&word=1' },
   { name: 'division',    file: 'division.html', params: 'seed=verify&share=2&group=2&shareword=1&groupword=1' },
 ];
@@ -51,7 +51,7 @@ const DUP_PARAMS = {
   time:        'read=6&sethands=6&after=6&match=6&ampm=8&duration=6',
   money:       'count=6&exchange=4&compare=4&word=6',
   within100:   'place=6&coladd=5&colsub=5&add=6&sub=6&three=6&tens=6&word=6',
-  length:      'ruler=5&nonstd=4&compare=4&extremes=4&order=3&curves=2&benchmark=6',
+  length:      'ruler=5&nonstd=4&compare=4&extremes=4&order=3&curves=2&benchmark=6&draw=5',
   multiplication: 'groups=5&write=5&multiply=5&word=5',
   division:    'share=6&group=6&shareword=6&groupword=6',
 };

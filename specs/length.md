@@ -3,8 +3,8 @@
 **File:** `length.html` · **Shared patterns:** [`conventions.md`](conventions.md)
 
 A seed-driven generator for measuring and comparing lengths, built on the shared `WS` engine.
-Seven section types spanning centimetre rulers, non-standard units, bar comparisons, ordering,
-curves, and real-world benchmarks — all rendered as inline SVG.
+Eight section types spanning centimetre rulers, non-standard units, bar comparisons, ordering,
+curves, real-world benchmarks, and a print-only draw-a-line section — all rendered as inline SVG.
 
 ---
 
@@ -19,6 +19,7 @@ curves, and real-world benchmarks — all rendered as inline SVG.
 | Order (`gOrder`) | four bars A–D; drag into order shortest → longest | drags/taps tiles into slots | `WS.enableDragOrder()` (`.dorder`) |
 | Curves (`gCurves`) | three same-width paths of differing waviness; "Which is the longest?" | types a letter (A–C) | `letter` input |
 | Benchmark (`gBenchmark`) | everyday object name; "Is a door longer than 1 metre?" | taps "Less than 1 m" or "More than 1 m" | `.sel-block` chip |
+| Draw (`gDraw`) | **print-only**: "Draw a straight line N cm long", a line K cm longer/shorter than a reference segment (`MN`/`XY`/…), or "a curve longer than line MN" | draws with a ruler on the printout (baseline + start dot) | not marked (no inputs) |
 
 ---
 
@@ -47,9 +48,12 @@ Section-level `distinctBy` closures prevent repeated objects/lengths:
 - `gOrder` likewise uses `distinctInts(4, 2, 12)`.
 - `gCurves` shuffles the three waviness kinds randomly each question.
 - `gBenchmark` deduplicates on object name from a fixed pool with known real-world classification.
+- `gDraw` (print-only) spreads variants with `balanced(['exact','exact','longer','shorter','curve'])`
+  and dedups on a used-key set (distinct `N` for "exact"; a distinct reference-segment letter pair
+  `MN`/`XY`/… per "longer/shorter/curve" item), so no two draw prompts repeat.
 
 ---
 
 ## 4. Config (URL params, clamped 0–20 each)
 
-`ruler` 3 · `nonstd` 3 · `compare` 3 · `extremes` 3 · `order` 2 · `curves` 2 · `benchmark` 4
+`ruler` 3 · `nonstd` 3 · `compare` 3 · `extremes` 3 · `order` 2 · `curves` 2 · `benchmark` 4 · `draw` 4 (print-only)
