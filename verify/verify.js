@@ -27,6 +27,7 @@ const TARGETS = [
   { name: 'numbers100',  file: 'numbers100.html', params: 'seed=verify' },
   { name: 'time',        file: 'time.html',
     params: 'seed=verify&read=2&sethands=2&after=2&match=2&ampm=2&duration=2' },
+  { name: 'money',       file: 'money.html', params: 'seed=verify&count=2&exchange=2&compare=2&word=2' },
 ];
 
 // Higher per-section counts used only for duplicate-question detection (each kept <= its pool size,
@@ -42,6 +43,7 @@ const DUP_PARAMS = {
   subtraction: 'bare=8&given=6&btk=6&pw=6',
   graphs:      'read=4&build=4',
   time:        'read=6&sethands=6&after=6&match=6&ampm=8&duration=6',
+  money:       'count=6&exchange=4&compare=4&word=6',
 };
 
 // Launch installed Chrome/Edge without downloading a browser.

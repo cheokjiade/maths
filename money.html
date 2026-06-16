@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* money-specific components */
+  .note { width:78px; height:39px; flex:0 0 auto; margin:2px; }
+  .coin { width:34px; height:34px; flex:0 0 auto; margin:1px; }
+  .moneyset { display:flex; flex-wrap:wrap; align-items:center; gap:1px; max-width:340px; }
+  .qrow { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+  .qcol { display:flex; flex-direction:column; gap:6px; }
+  input.txt { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:64px; }
+  .setchip { padding:6px !important; }
+  .setchip .moneyset { max-width:240px; }
+  .specimen-note { font-size:8pt; color:#777; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>💰 Money Worksheet — options <span style="font-weight:normal;font-size:10pt;color:#666;">(Singapore $ &amp; ¢)</span></summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. Same seed = same sheet; blank = random.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Count a set of coins or notes and write the amount.">Count <input type="number" id="f-count" min="0" max="20"></label>
+      <label data-tip="Exchange money: how many of one note make another.">Exchange <input type="number" id="f-exchange" min="0" max="20"></label>
+      <label data-tip="Tick the set that has more money.">Compare <input type="number" id="f-compare" min="0" max="20"></label>
+      <label data-tip="Money word problems: cost, total and change.">Word problems <input type="number" id="f-word" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Coins: 5¢, 10¢, 20¢, 50¢, $1. Notes: $2, $5, $10, $50. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Money</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer specimen-note">Notes shown are stylised SPECIMEN illustrations for learning — not real currency. 💵🪙</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  count:WS.clamp(WS.toInt(WS.Q.get('count'),4),0,20), exchange:WS.clamp(WS.toInt(WS.Q.get('exchange'),3),0,20),
+  compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20), word:WS.clamp(WS.toInt(WS.Q.get('word'),4),0,20) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
+
+/* ---------- Singapore currency as SVG (own artwork, SPECIMEN-marked, not real notes) ---------- */
+const NOTE={ 2:['#b39ddb','#7e57c2'], 5:['#80c89a','#43a047'], 10:['#e58a8a','#d32f2f'], 50:['#6aa9da','#1976d2'] };
+function noteSVG(v){ const [c,c2]=NOTE[v];
+  return '<svg class="note" viewBox="0 0 120 60" role="img" aria-label="$'+v+' note">'
+    +'<rect x="1.5" y="1.5" width="117" height="57" rx="6" fill="'+c+'" stroke="'+c2+'" stroke-width="2.5"/>'
+    +'<rect x="6" y="6" width="108" height="48" rx="4" fill="none" stroke="'+c2+'" stroke-width="0.8" opacity="0.7"/>'
+    +'<g transform="translate(95,30)" fill="#ffffff" opacity="0.45"><ellipse cx="0" cy="-5" rx="8" ry="10"/><path d="M-13,22 Q0,2 13,22 Z"/></g>'
+    +'<text x="11" y="19" font-family="Arial" font-size="14" font-weight="bold" fill="#1a1a1a">$'+v+'</text>'
+    +'<text x="11" y="50" font-family="Arial" font-size="7" fill="#1a1a1a" letter-spacing="0.5">SINGAPORE</text>'
+    +'<text x="113" y="52" font-family="Arial" font-size="11" font-weight="bold" fill="#1a1a1a" text-anchor="end">'+v+'</text>'
+    +'<text x="60" y="35" font-family="Arial" font-size="12" font-weight="bold" fill="#000000" opacity="0.30" text-anchor="middle" transform="rotate(-13 60 31)" letter-spacing="2">SPECIMEN</text>'
+    +'</svg>'; }
+const COIN={ 5:['#cfd3d6',12], 10:['#cfd3d6',13.5], 20:['#cfd3d6',15], 50:['#cfd3d6',16.5], 100:['#dcc06a',18] };
+function coinSVG(cents){ const [c,r]=COIN[cents]; const lbl= cents>=100 ? '$1' : cents+'¢';
+  let inner=''; if(cents>=100){ inner='<circle cx="22" cy="22" r="'+(r-3.5)+'" fill="#cfd3d6"/>'; }
+  return '<svg class="coin" viewBox="0 0 44 44" role="img" aria-label="'+lbl+' coin">'
+    +'<circle cx="22" cy="22" r="'+r+'" fill="'+c+'" stroke="#9aa0a4" stroke-width="1.6"/>'+inner
+    +'<circle cx="22" cy="22" r="'+(r-2)+'" fill="none" stroke="#aeb4b8" stroke-width="0.8"/>'
+    +'<text x="22" y="22.5" font-family="Arial" font-size="'+(cents>=100?10:10.5)+'" font-weight="bold" text-anchor="middle" dominant-baseline="central" fill="#3a3d40">'+lbl+'</text></svg>'; }
+
+// render a list of cents-values as a money set (notes >=200 use note art, else coins)
+function renderSet(centsList){ return '<div class="moneyset">'+centsList.map(c=> c>=200 ? noteSVG(c/100) : coinSVG(c)).join('')+'</div>'; }
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const NOTE_C=[200,500,1000,5000], COIN_C=[5,10,20,50,100];
+
+/* ---------- input + chip factories ---------- */
+let uid=0;
+const numIn=ans=>'<span class="field"><input class="txt gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip '+(o.cls||'')+'" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join('');
+  return '<div class="sel-block" data-mode="one" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+// de-duplicate questions within a section
+function distinctBy(pickFn, keyOf){ const used=new Set(); return ()=>{ let v; for(let g=0;g<60;g++){ v=pickFn(); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; }; }
+
+/* ---------- generators ---------- */
+const ITEMS=[['cake','cakes'],['ball','balls'],['pen','pens'],['book','books'],['bun','buns'],['apple','apples'],['toy car','toy cars'],['kite','kites'],['mango','mangoes'],['sweet','sweets']];
+const itemPick=balanced(ITEMS);
+
+// COUNT — a set of coins (answer in ¢, <=95) or notes (answer in $); distinct totals across the section
+const countMode=balanced(['coins','notes']);
+const countUsed=new Set();
+function gCount(i){
+  const mode=countMode(i); let set, total, key=null, g=0;
+  do{
+    if(mode==='coins'){ const n=randInt(3,5); set=[]; for(let k=0;k<n;k++) set.push(pick([5,10,20,50])); total=sum(set); key= total<=95 ? 'c'+total : null; }
+    else { const n=randInt(2,4); set=[]; for(let k=0;k<n;k++) set.push(pick(NOTE_C)); total=sum(set)/100; key='n'+total; }
+  } while((key===null || countUsed.has(key)) && g++<100);
+  countUsed.add(key);
+  const tail= mode==='coins' ? '<div>= '+numIn(total)+' ¢</div>' : '<div>= $ '+numIn(total)+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Count and write the amount of money.<div class="qrow">'+renderSet(set)+tail+'</div></div>';
+}
+
+// EXCHANGE — N b1-notes = ? b2-notes
+const WORDV={2:'two-dollar',5:'five-dollar',10:'ten-dollar',50:'fifty-dollar'};
+const exPick=distinctBy(()=>{ let b1,n1,b2,ans,total,g=0;
+  do{ b1=pick([2,5,10,50]); n1=randInt(2,5); total=b1*n1; b2=pick([2,5,10,50]); ans=total/b2; g++; }
+  while((b2===b1 || total%b2!==0 || ans<2 || ans>20) && g<120);
+  return {b1,n1,b2,ans}; }, x=>x.b1+'-'+x.n1+'-'+x.b2);
+function gExchange(i){ const {b1,n1,b2,ans}=exPick();
+  return '<div class="item"><span class="label">'+i+'.</span> Exchange the money.<div class="qrow">'+renderSet(Array(n1).fill(b1*100))
+    +'<div>'+n1+' '+WORDV[b1]+' notes = '+numIn(ans)+' '+WORDV[b2]+' notes</div></div></div>'; }
+
+// COMPARE — tick the set with more money
+const cmpPick=distinctBy(()=>{ const mk=()=>{ const notes= rng()<0.5; const n=randInt(2,4); const set=[]; for(let k=0;k<n;k++) set.push(pick(notes?NOTE_C:[10,20,50,100])); return set; };
+  let A=mk(), B=mk(), g=0; while(sum(A)===sum(B) && g++<40) B=mk(); return {A,B}; }, x=> [sum(x.A),sum(x.B)].sort((a,b)=>a-b).join('-'));
+function gCompare(i){ const {A,B}=cmpPick(); const tA=sum(A), tB=sum(B);
+  const opts=[{html:'<div class="setlabel">A</div>'+renderSet(A), ok:tA>tB, cls:'setchip'},{html:'<div class="setlabel">B</div>'+renderSet(B), ok:tB>tA, cls:'setchip'}];
+  return '<div class="item"><span class="label">'+i+'.</span> Tick the set that has <b>more</b> money.'+selBlock(opts)+'</div>'; }
+
+// WORD — cost each / two items / how much more / change
+const wordV=balanced(['each','two','more','change']);
+const wordUsed=new Set();
+function gWord(i){ const v=wordV(i); const it=itemPick(i); let text, ans, key, g=0;
+  do{
+    if(v==='each'){ const k=randInt(2,4), p=pick([5,10,20,30,40,50]); ans=k*p; text='Devi bought '+k+' '+it[1]+' at '+p+'¢ each. She paid '+numIn(ans)+' ¢ altogether.'; key='each'+k+'-'+p; }
+    else if(v==='two'){ const p1=pick([10,20,30,40,50]), p2=pick([10,20,30,40,50]); ans=p1+p2; text='Jack bought a '+it[0]+' for '+p1+'¢ and a '+ITEMS[(ITEMS.indexOf(it)+1)%ITEMS.length][0]+' for '+p2+'¢. He paid '+numIn(ans)+' ¢ in all.'; key='two'+p1+'-'+p2; }
+    else if(v==='more'){ const have=randInt(2,9), cost=have+randInt(2,9); ans=cost-have; text='Siti has $'+have+'. The '+it[0]+' costs $'+cost+'. She needs $'+numIn(ans)+' more.'; key='more'+have+'-'+cost; }
+    else { const cost=randInt(2,8), pay=cost+randInt(1,9); ans=pay-cost; text='Ben pays $'+pay+' for a '+it[0]+' that costs $'+cost+'. His change is $'+numIn(ans)+'.'; key='chg'+pay+'-'+cost; }
+  } while(wordUsed.has(key) && g++<40);
+  wordUsed.add(key);
+  return '<div class="item"><span class="label">'+i+'.</span> '+text+'</div>'; }
+
+/* ---------- assemble ---------- */
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Count and write the amount of money.', cfg.count, gCount);
+html+=section('Exchange the money.', cfg.exchange, gExchange);
+html+=section('Which set has more money?', cfg.compare, gCompare);
+html+=section('Solve the money word problems.', cfg.word, gWord);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  Singapore money: coins 5¢–$1, notes $2–$50';
+
+/* ---------- wiring (shared engine) ---------- */
+WS.wireChips();
+WS.wirePanel(cfg, ['count','exchange','compare','word'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>
