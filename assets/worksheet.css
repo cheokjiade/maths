@@ -1,0 +1,77 @@
+/* Shared styles for all worksheet generators.
+   Linked with a plain <link rel="stylesheet"> so it works from file:// (double-click).
+   Page-specific components (equation boxes, number bonds, grids, shapes, etc.) stay in
+   each page's own <style>. */
+
+@page { size: A4; margin: 16mm 14mm; }
+:root { --ink:#000; --right:#137a13; --wrong:#c0142c; --accent:#2563eb; }
+
+body {
+  font-family: "Comic Sans MS", "Century Gothic", Verdana, sans-serif;
+  font-size: 17pt; color: var(--ink); line-height: 1.7;
+  max-width: 880px; margin: 0 auto; padding: 20px;
+}
+
+/* control panel (never printed) */
+.panel { background:#f3f4f6; border:1px solid #cbd0d6; border-radius:10px; padding:14px 16px; margin-bottom:22px; font-family:Verdana,sans-serif; font-size:11pt; line-height:1.5; }
+.panel h3 { margin:0 0 10px; font-size:13pt; }
+.panel .fields { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; }
+.panel label { display:flex; flex-direction:column; font-weight:bold; gap:3px; }
+.panel input[type=text], .panel input[type=number] { font-size:11pt; padding:4px 6px; border:1px solid #aaa; border-radius:5px; }
+.panel input[type=number] { width:58px; } .panel input[type=text] { width:120px; }
+.panel label.checkbox { flex-direction:row; align-items:center; gap:6px; }
+.panel .btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.panel button { font-size:11pt; padding:7px 14px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; font-weight:bold; }
+.panel button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.panel button.go { background:#16a34a; color:#fff; border-color:#16a34a; }
+.panel .hint { font-weight:normal; color:#555; font-size:10pt; margin-top:8px; }
+.panel a { color:var(--accent); text-decoration:none; font-weight:bold; }
+
+/* collapsible options panel (tap the summary to expand/collapse on phones) */
+details.panel > summary { cursor:pointer; font-weight:bold; font-size:13pt; list-style:none; outline:none; }
+details.panel > summary::-webkit-details-marker { display:none; }
+details.panel > summary::after { content:' ▾'; color:#666; }
+details.panel[open] > summary::after { content:' ▴'; }
+.panel .backlink { margin:10px 0 8px; }
+.panel-body { margin-top:10px; }
+.panel label[data-tip] { cursor:help; }
+
+/* option tooltip (hover on desktop, tap on touch) */
+.ws-tip { position:absolute; background:#111827; color:#fff; font-family:Verdana,sans-serif; font-size:10pt; line-height:1.35; padding:6px 9px; border-radius:6px; max-width:240px; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,.3); pointer-events:none; }
+
+.score { display:none; font-family:Verdana,sans-serif; font-size:15pt; font-weight:bold; margin:4px 0 18px; padding:8px 14px; border-radius:8px; background:#fffbe6; border:1px solid #e6d98a; }
+
+/* worksheet header */
+h1 { text-align:center; border-bottom:3px solid var(--ink); padding-bottom:8px; margin-bottom:6px; font-size:24pt; }
+.meta-line { text-align:center; font-size:10pt; color:#666; margin:-2px 0 14px; font-family:Verdana,sans-serif; }
+.name-row { display:flex; justify-content:space-between; font-size:14pt; margin-bottom:22px; }
+.name-row span { border-bottom:1px solid var(--ink); display:inline-block; min-width:200px; }
+h2 { font-size:18pt; margin-top:24px; margin-bottom:12px; }
+
+.item { margin-bottom:18px; page-break-inside:avoid; }
+.label { font-weight:bold; margin-right:6px; }
+
+/* gradable inputs — width/box styling is per-page; these are the shared bits */
+.field { position:relative; display:inline-flex; align-items:center; }
+input.correct { color:var(--right); border-color:var(--right); }
+input.incorrect { color:var(--wrong); border-color:var(--wrong); }
+.correction { color:var(--wrong); font-size:12pt; margin-left:4px; font-weight:bold; }
+
+/* selectable chips (sel-block / match-block) */
+.chips { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.chip { font-family:inherit; font-size:16pt; padding:6px 14px; border:2px solid var(--ink); border-radius:22px; background:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.chip.selected { background:#fde68a; }
+.chip.correct { background:#bbf7d0; border-color:var(--right); }
+.chip.incorrect { background:#fecaca; border-color:var(--wrong); }
+.chip.missed { border-style:dashed; border-color:var(--right); }
+
+.footer { text-align:center; font-size:11pt; margin-top:26px; color:#555; }
+
+@media print {
+  body { padding:0; }
+  .no-print { display:none !important; }
+  input.correct, input.incorrect { color:var(--ink); border-color:var(--ink); }
+  .correction { display:none; }
+  .chip.selected, .chip.correct, .chip.incorrect { background:#fff; border-color:var(--ink); }
+  .chip.missed { border-style:solid; }
+}

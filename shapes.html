@@ -4,102 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shapes Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
 <style>
-  @page { size: A4; margin: 16mm 14mm; }
-  :root { --ink:#000; --right:#137a13; --wrong:#c0142c; --accent:#2563eb; }
-  body { font-family:"Comic Sans MS","Century Gothic",Verdana,sans-serif; font-size:17pt; color:var(--ink); line-height:1.7; max-width:880px; margin:0 auto; padding:20px; }
-
-  .panel { background:#f3f4f6; border:1px solid #cbd0d6; border-radius:10px; padding:14px 16px; margin-bottom:22px; font-family:Verdana,sans-serif; font-size:11pt; line-height:1.5; }
-  .panel h3 { margin:0 0 10px; font-size:13pt; }
-  .panel .fields { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; }
-  .panel label { display:flex; flex-direction:column; font-weight:bold; gap:3px; }
-  .panel input[type=text],.panel input[type=number]{ font-size:11pt; padding:4px 6px; border:1px solid #aaa; border-radius:5px; }
-  .panel input[type=number]{ width:56px; } .panel input[type=text]{ width:120px; }
-  .panel .btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-  .panel button { font-size:11pt; padding:7px 14px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; font-weight:bold; }
-  .panel button.primary{ background:var(--accent); color:#fff; border-color:var(--accent);} .panel button.go{ background:#16a34a; color:#fff; border-color:#16a34a;}
-  .panel .hint{ font-weight:normal; color:#555; font-size:10pt; margin-top:8px; }
-  .score{ display:none; font-family:Verdana,sans-serif; font-size:15pt; font-weight:bold; margin:4px 0 18px; padding:8px 14px; border-radius:8px; background:#fffbe6; border:1px solid #e6d98a; }
-
-  h1{ text-align:center; border-bottom:3px solid var(--ink); padding-bottom:8px; margin-bottom:6px; font-size:24pt; }
-  .meta-line{ text-align:center; font-size:10pt; color:#666; margin:-2px 0 14px; font-family:Verdana,sans-serif; }
-  .name-row{ display:flex; justify-content:space-between; font-size:14pt; margin-bottom:22px; }
-  .name-row span{ border-bottom:1px solid var(--ink); display:inline-block; min-width:200px; }
-  h2{ font-size:18pt; margin-top:24px; margin-bottom:12px; }
-
-  .item{ margin-bottom:20px; page-break-inside:avoid; }
-  .label{ font-weight:bold; margin-right:6px; }
-  .qrow{ display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
-
-  .shp{ vertical-align:middle; margin:2px; }
-  .shape-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .pic-box{ border:1.5px solid #888; border-radius:6px; padding:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; max-width:62%; }
-
-  .field{ position:relative; display:inline-flex; align-items:center; }
-  input.txt,input.num{ font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); }
-  input.txt{ width:150px; } input.num{ width:56px; }
-  input.correct{ color:var(--right); border-color:var(--right);} input.incorrect{ color:var(--wrong); border-color:var(--wrong);}
-  .correction{ color:var(--wrong); font-size:12pt; margin-left:4px; font-weight:bold; }
-
-  /* selectable shape/word chips */
-  .chips{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-  .chip{ font-family:inherit; font-size:15pt; padding:6px 14px; border:2px solid var(--ink); border-radius:22px; background:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
-  .chip.shapechip{ border-radius:10px; padding:6px; }
-  .chip.selected{ background:#fde68a; }
-  .chip.correct{ background:#bbf7d0; border-color:var(--right); }
-  .chip.incorrect{ background:#fecaca; border-color:var(--wrong); }
-  .chip.missed{ border-style:dashed; border-color:var(--right); }
-
-  /* draw box (print) */
-  .drawbox{ border:1.5px solid #888; border-radius:6px; height:120px; width:200px; display:flex; align-items:flex-start; justify-content:flex-start; }
-  .drawbox .cap{ font-size:12pt; padding:4px 8px; color:#444; }
-
-  /* grids */
-  .grids{ display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
-  .gridwrap{ text-align:center; font-size:11pt; color:#555; }
-  svg.grid{ touch-action:none; }
-  .gdot{ fill:#444; } .gdot.sel{ fill:var(--accent); }
-  .gline{ stroke:var(--accent); stroke-width:3; stroke-linecap:round; }
-  .gline.correct{ stroke:var(--right);} .gline.extra{ stroke:var(--wrong);} .gline.missing{ stroke:#999; stroke-dasharray:5 5; }
-  .gtarget{ stroke:#000; stroke-width:3; stroke-linecap:round; fill:none; }
-  .ghit{ fill:transparent; }
-
-  .footer{ text-align:center; font-size:11pt; margin-top:26px; color:#555; }
-
-  @media print {
-    body{ padding:0; } .no-print{ display:none !important; }
-    input.correct,input.incorrect{ color:var(--ink); border-color:var(--ink);} .correction{ display:none; }
-    .chip.selected,.chip.correct,.chip.incorrect{ background:#fff; border-color:var(--ink);} .chip.missed{ border-style:solid; }
-    .gline,.gline.correct,.gline.extra{ stroke:#000; } .gline.missing{ display:none; }
-  }
+  /* shapes-specific components */
+  .qrow { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .shp { vertical-align:middle; margin:2px; }
+  .shape-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .pic-box { border:1.5px solid #888; border-radius:6px; padding:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; max-width:62%; }
+  input.txt, input.num { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); }
+  input.txt { width:150px; } input.num { width:56px; }
+  .chip.shapechip { border-radius:10px; padding:6px; }
+  .drawbox { border:1.5px solid #888; border-radius:6px; height:120px; width:200px; display:flex; align-items:flex-start; justify-content:flex-start; }
+  .drawbox .cap { font-size:12pt; padding:4px 8px; color:#444; }
+  .grids { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .gridwrap { text-align:center; font-size:11pt; color:#555; }
+  svg.grid { touch-action:none; }
+  .gdot { fill:#444; } .gdot.sel { fill:var(--accent); }
+  .gline { stroke:var(--accent); stroke-width:3; stroke-linecap:round; }
+  .gline.correct { stroke:var(--right); } .gline.extra { stroke:var(--wrong); } .gline.missing { stroke:#999; stroke-dasharray:5 5; }
+  .gtarget { stroke:#000; stroke-width:3; stroke-linecap:round; fill:none; }
+  .ghit { fill:transparent; }
+  @media print { .gline, .gline.correct, .gline.extra { stroke:#000; } .gline.missing { display:none; } }
 </style>
 </head>
 <body>
-
-<div class="panel no-print">
-  <div style="margin-bottom:10px;"><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:bold;">&larr; All worksheets</a></div>
-  <h3>🔷 Shapes Worksheet Generator</h3>
-  <div class="fields">
-    <label>Seed <input type="text" id="f-seed"></label>
-    <label>Name <input type="number" id="f-name" min="0" max="20"></label>
-    <label>Colour-match <input type="number" id="f-match" min="0" max="20"></label>
-    <label>Count <input type="number" id="f-count" min="0" max="10"></label>
-    <label>Grouped-by <input type="number" id="f-group" min="0" max="10"></label>
-    <label>Name 2 parts <input type="number" id="f-compose" min="0" max="20"></label>
-    <label>Object→shape <input type="number" id="f-object" min="0" max="20"></label>
-    <label>Copy-grid <input type="number" id="f-grid" min="0" max="10"></label>
-    <label>Draw (print) <input type="number" id="f-draw" min="0" max="12"></label>
-    <label>Partition (print) <input type="number" id="f-part" min="0" max="10"></label>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>🔷 Shapes Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Write the name of a shown shape.">Name <input type="number" id="f-name" min="0" max="20"></label>
+      <label data-tip="Tap every shape in a row that matches a named shape.">Colour-match <input type="number" id="f-match" min="0" max="20"></label>
+      <label data-tip="Count how many of each kind of shape are in a picture.">Count <input type="number" id="f-count" min="0" max="10"></label>
+      <label data-tip="Decide whether shapes are grouped by size, colour or shape.">Grouped-by <input type="number" id="f-group" min="0" max="10"></label>
+      <label data-tip="Name the two shapes a combined figure is made of.">Name 2 parts <input type="number" id="f-compose" min="0" max="20"></label>
+      <label data-tip="Choose the shape of an everyday object's face.">Object→shape <input type="number" id="f-object" min="0" max="20"></label>
+      <label data-tip="Copy a figure by joining grid dots (tap two dots to draw a line). Auto-marked.">Copy-grid <input type="number" id="f-grid" min="0" max="10"></label>
+      <label data-tip="Print-only: an empty box to draw a named shape by hand.">Draw (print) <input type="number" id="f-draw" min="0" max="12"></label>
+      <label data-tip="Print-only: draw lines to split a figure into named parts.">Partition (print) <input type="number" id="f-part" min="0" max="10"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type the shape name (e.g. "circle", "half circle"), tap shapes/options to select, or join grid dots to copy a figure. Same seed + settings = same worksheet.</div>
   </div>
-  <div class="btns">
-    <button class="go" id="b-apply">Generate</button>
-    <button id="b-random">🎲 Random seed</button>
-    <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
-    <button id="b-reset">Clear answers</button>
-    <button id="b-print">🖨️ Print</button>
-  </div>
-  <div class="hint">Type the shape name (e.g. "circle", "half circle"), tap shapes/options to select, or join grid dots to copy a figure. Same seed + settings = same worksheet.</div>
-</div>
+</details>
 
 <div class="score" id="score"></div>
 
@@ -109,24 +63,17 @@
 <div id="sheet"></div>
 <div class="footer">Great job! 🔺🔵⬛</div>
 
+<script src="assets/worksheet.js"></script>
 <script>
 "use strict";
-/* ---------- RNG ---------- */
-function xmur3(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=(h<<13)|(h>>>19);}return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return (h^=h>>>16)>>>0;};}
-function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
-const Q=new URLSearchParams(location.search);
-const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-const toInt=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
-const cfg={ seed:Q.get('seed')||'1',
-  name:clamp(toInt(Q.get('name'),4),0,20), match:clamp(toInt(Q.get('match'),2),0,20),
-  count:clamp(toInt(Q.get('count'),1),0,10), group:clamp(toInt(Q.get('group'),2),0,10),
-  compose:clamp(toInt(Q.get('compose'),3),0,20), object:clamp(toInt(Q.get('object'),3),0,20),
-  grid:clamp(toInt(Q.get('grid'),2),0,10), draw:clamp(toInt(Q.get('draw'),2),0,12),
-  part:clamp(toInt(Q.get('part'),2),0,10) };
-const rng=mulberry32(xmur3(cfg.seed)());
-const randInt=(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1));
-const pick=a=>a[Math.floor(rng()*a.length)];
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  name:WS.clamp(WS.toInt(WS.Q.get('name'),4),0,20), match:WS.clamp(WS.toInt(WS.Q.get('match'),2),0,20),
+  count:WS.clamp(WS.toInt(WS.Q.get('count'),1),0,10), group:WS.clamp(WS.toInt(WS.Q.get('group'),2),0,10),
+  compose:WS.clamp(WS.toInt(WS.Q.get('compose'),3),0,20), object:WS.clamp(WS.toInt(WS.Q.get('object'),3),0,20),
+  grid:WS.clamp(WS.toInt(WS.Q.get('grid'),2),0,10), draw:WS.clamp(WS.toInt(WS.Q.get('draw'),2),0,12),
+  part:WS.clamp(WS.toInt(WS.Q.get('part'),2),0,10) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle } = WS.helpers(rng);
 
 /* ---------- shape SVG library ---------- */
 const SHAPES=['rectangle','square','circle','triangle','half circle','quarter circle'];
@@ -150,9 +97,9 @@ const COLOURS=['#f6c0c0','#bcd6f6','#bfe7c2','#f6e3a8','#d9c2ee'];
 
 /* ---------- input/select factories ---------- */
 let uid=0;
-const nameIn=ans=>'<span class="field"><input class="txt gradable" data-type="name" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
-const numIn=ans=>'<span class="field"><input class="num gradable" data-type="num" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
-function selBlock(mode,options){ // options: [{html, ok}]
+const nameIn=ans=>'<span class="field"><input class="txt gradable" data-kind="name" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
+const numIn=ans=>'<span class="field"><input class="num gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(mode,options){
   const id='s'+(uid++);
   let chips=options.map(o=>'<button type="button" class="chip '+(o.shape?'shapechip':'')+'" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join('');
   return '<div class="sel-block" data-mode="'+mode+'" id="'+id+'"><div class="chips">'+chips+'</div></div>';
@@ -175,7 +122,6 @@ function gMatch(i){
 function gCount(i){
   const kinds=SHAPES.slice(); const counts={}; let pool=[];
   kinds.forEach(k=>{ const c=randInt(0,4); counts[k]=c; for(let j=0;j<c;j++) pool.push(k); });
-  // ensure not all zero
   if(pool.length<3){ const k=pick(kinds); counts[k]+=3; for(let j=0;j<3;j++) pool.push(k); }
   pool=shuffle(pool);
   let box='<div class="pic-box">'; pool.forEach(k=>box+=shapeSVG(k,{size:40,rot:pick([0,0,15,30])})); box+='</div>';
@@ -221,12 +167,12 @@ function gObject(i){
 
 /* ---------- grid copy (interactive, marked) ---------- */
 const FIGS=[
-  [[1,1],[4,1],[4,4],[1,4],[1,1]],                              // square loop
-  [[1,1],[3,3],[5,1],[5,4],[3,2],[1,4],[1,1]],                  // zigzag/arrow-ish
-  [[1,4],[1,1],[4,1],[4,2],[2,2],[2,4],[1,4]],                  // L / step
-  [[0,1],[2,4],[4,1]],                                          // V
-  [[1,1],[4,1],[4,3],[5,3],[3,5],[1,3],[2,3],[1,1]],            // house-ish
-  [[1,2],[3,0],[5,2],[4,2],[4,4],[2,4],[2,2],[1,2]],            // arrow up
+  [[1,1],[4,1],[4,4],[1,4],[1,1]],
+  [[1,1],[3,3],[5,1],[5,4],[3,2],[1,4],[1,1]],
+  [[1,4],[1,1],[4,1],[4,2],[2,2],[2,4],[1,4]],
+  [[0,1],[2,4],[4,1]],
+  [[1,1],[4,1],[4,3],[5,3],[3,5],[1,3],[2,3],[1,1]],
+  [[1,2],[3,0],[5,2],[4,2],[4,4],[2,4],[2,2],[1,2]],
 ];
 function pathToSegs(path){ const s=[]; for(let i=0;i<path.length-1;i++) s.push([path[i],path[i+1]]); return s; }
 const gridState={};
@@ -265,15 +211,6 @@ html+=section('Form the figures (draw the dividing lines).', cfg.part, gPart);
 document.getElementById('sheet').innerHTML=html;
 document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  shapes: rectangle, square, circle, triangle, half/quarter circle';
 
-/* ---------- select chip behaviour ---------- */
-document.querySelectorAll('.sel-block').forEach(b=>{
-  const mode=b.dataset.mode;
-  b.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
-    if(mode==='one'){ b.querySelectorAll('.chip').forEach(x=>{ if(x!==c) x.classList.remove('selected'); }); }
-    c.classList.toggle('selected');
-  }));
-});
-
 /* ---------- grid interaction ---------- */
 function segKey(a,b){ const k1=a[0]+','+a[1], k2=b[0]+','+b[1]; return k1<k2 ? k1+'|'+k2 : k2+'|'+k1; }
 function redrawGrid(id){
@@ -298,67 +235,43 @@ document.querySelectorAll('svg[data-grid]').forEach(svg=>{
   }));
 });
 
-/* ---------- marking ---------- */
+/* ---------- shape-name marking + custom markers (shared engine) ---------- */
 const SYN=s=>{ s=(s||'').toLowerCase().trim().replace(/\s+/g,' '); s=s.replace('semicircle','half circle').replace('semi circle','half circle').replace('oblong','rectangle'); if(s.length>1&&s.endsWith('s')) s=s.slice(0,-1); return s; };
-const WORDS=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen'];
-function parseNum(s){ s=(s||'').trim().toLowerCase(); if(s==='')return NaN; if(/^\d+$/.test(s))return +s; const i=WORDS.indexOf(s); return i>=0?i:NaN; }
-const scoreEl=document.getElementById('score');
-function setMark(inp,ok,correctText){ inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove();
-  if(ok){ inp.classList.add('correct'); } else { inp.classList.add('incorrect'); const s=document.createElement('span'); s.className='correction'; s.textContent='('+correctText+')'; inp.after(s); } }
-function mark(){
-  let total=0,right=0;
-  // compose groups (order-independent pair)
-  const composed=new Set();
+WS.addKind('name', (v,a)=>SYN(v)===SYN(a));
+
+// compose: order-independent pair of shape names (its inputs are skipped by the generic marker)
+function composeExtra(){
+  let total=0, right=0;
   document.querySelectorAll('[data-compose]').forEach(g=>{
-    const inps=[...g.querySelectorAll('input.gradable')]; const ans=inps.map(x=>SYN(x.dataset.answer)); const got=inps.map(x=>SYN(x.value));
+    const inps=[...g.querySelectorAll('input.gradable')];
+    const ans=inps.map(x=>SYN(x.dataset.answer)); const got=inps.map(x=>SYN(x.value));
     const pairOK = JSON.stringify([...ans].sort())===JSON.stringify([...got].sort());
-    inps.forEach((inp,k)=>{ total++; composed.add(inp); const ok=pairOK||got[k]===ans[k]||ans.includes(got[k]); if(ok)right++; setMark(inp,ok,inp.dataset.answer); });
+    inps.forEach((inp,k)=>{ total++; const ok=pairOK||got[k]===ans[k]||ans.includes(got[k]); if(ok)right++; WS.setMark(inp,ok,inp.dataset.answer); });
   });
-  document.querySelectorAll('input.gradable').forEach(inp=>{
-    if(composed.has(inp)) return;
-    total++;
-    let ok;
-    if(inp.dataset.type==='name') ok=SYN(inp.value)===SYN(inp.dataset.answer);
-    else ok=parseNum(inp.value)===Number(inp.dataset.answer);
-    if(ok)right++; setMark(inp,ok,inp.dataset.answer);
-  });
-  document.querySelectorAll('.sel-block').forEach(b=>{
-    total++; let ok=true;
-    b.querySelectorAll('.chip').forEach(c=>{ const should=c.dataset.ok==='1', sel=c.classList.contains('selected'); c.classList.remove('correct','incorrect','missed');
-      if(sel&&should)c.classList.add('correct'); else if(sel&&!should){c.classList.add('incorrect');ok=false;} else if(!sel&&should){c.classList.add('missed');ok=false;} });
-    if(ok)right++;
-  });
+  return { total, right };
+}
+// grid copy: compare drawn segment set to the target set
+function gridExtra(){
+  let total=0, right=0;
   document.querySelectorAll('svg[data-grid]').forEach(svg=>{
     total++; const st=gridState[svg.id];
     const tset=new Set(st.segs.map(s=>segKey(s[0],s[1])));
     const uset=new Set(st.user.map(s=>segKey(s.a,s.b)));
     let allright = tset.size===uset.size; tset.forEach(k=>{ if(!uset.has(k)) allright=false; });
     st.user.forEach(s=>{ s.cls = tset.has(segKey(s.a,s.b))?'correct':'extra'; });
-    // add missing target lines as ghosts
-    st.user=st.user.filter(s=>true);
     st.segs.forEach(s=>{ const k=segKey(s[0],s[1]); if(!uset.has(k)) st.user.push({a:s[0],b:s[1],cls:'missing'}); });
     redrawGrid(svg.id);
     if(allright)right++;
   });
-  const pct=total?Math.round(right/total*100):0; const face=pct===100?' 🌟':pct>=70?' 😀':' 💪';
-  scoreEl.textContent='Score: '+right+' / '+total+'  ('+pct+'%)'+face; scoreEl.style.display='block';
-  scoreEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+  return { total, right };
 }
-function clearAll(){
-  document.querySelectorAll('input.gradable').forEach(inp=>{ inp.value=''; inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove(); });
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','correct','incorrect','missed'));
-  Object.keys(gridState).forEach(id=>{ gridState[id].user=[]; gridState[id].sel=null; if(document.getElementById(id)) redrawGrid(id); });
-  scoreEl.style.display='none';
-}
+function gridClear(){ Object.keys(gridState).forEach(id=>{ gridState[id].user=[]; gridState[id].sel=null; if(document.getElementById(id)) redrawGrid(id); }); }
 
-/* ---------- panel ---------- */
-const $=id=>document.getElementById(id);
-$('f-seed').value=cfg.seed;
-['name','match','count','group','compose','object','grid','draw','part'].forEach(k=>$('f-'+k).value=cfg[k]);
-function apply(){ const p=new URLSearchParams(); p.set('seed',$('f-seed').value||'1'); ['name','match','count','group','compose','object','grid','draw','part'].forEach(k=>p.set(k,$('f-'+k).value)); location.search=p.toString(); }
-$('b-apply').onclick=apply;
-$('b-random').onclick=()=>{ $('f-seed').value=Math.random().toString(36).slice(2,8); apply(); };
-$('b-submit').onclick=mark; $('b-reset').onclick=clearAll; $('b-print').onclick=()=>window.print();
+WS.wireChips();
+WS.wirePanel(cfg, ['name','match','count','group','compose','object','grid','draw','part'], {
+  mark:  () => WS.mark({ skip: inp => inp.closest('[data-compose]'), extras: [composeExtra, gridExtra] }),
+  clear: () => WS.clearAll(gridClear),
+});
 </script>
 </body>
 </html>

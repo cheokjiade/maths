@@ -4,92 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Subtraction Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
 <style>
-  @page { size: A4; margin: 16mm 14mm; }
-  :root { --ink:#000; --right:#137a13; --wrong:#c0142c; }
-  body {
-    font-family: "Comic Sans MS", "Century Gothic", Verdana, sans-serif;
-    font-size: 17pt;
-    color: var(--ink);
-    line-height: 1.7;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  /* ---------- control panel (never printed) ---------- */
-  .panel {
-    background: #f3f4f6;
-    border: 1px solid #cbd0d6;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 22px;
-    font-family: Verdana, sans-serif;
-    font-size: 11pt;
-    line-height: 1.5;
-  }
-  .panel h3 { margin: 0 0 10px; font-size: 13pt; }
-  .panel .fields { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; }
-  .panel label { display: flex; flex-direction: column; font-weight: bold; gap: 3px; }
-  .panel input[type=text], .panel input[type=number] {
-    font-size: 11pt; padding: 4px 6px; border: 1px solid #aaa; border-radius: 5px;
-  }
-  .panel input[type=number] { width: 64px; }
-  .panel input[type=text] { width: 130px; }
-  .panel .checkbox { flex-direction: row; align-items: center; gap: 6px; }
-  .panel .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .panel button {
-    font-size: 11pt; padding: 7px 14px; border-radius: 6px; border: 1px solid #888;
-    background: #fff; cursor: pointer; font-weight: bold;
-  }
-  .panel button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
-  .panel button.go { background: #16a34a; color: #fff; border-color: #16a34a; }
-  .panel .hint { font-weight: normal; color: #555; font-size: 10pt; margin-top: 8px; }
-  .score {
-    display: none; font-family: Verdana, sans-serif; font-size: 15pt; font-weight: bold;
-    margin: 4px 0 18px; padding: 8px 14px; border-radius: 8px; background: #fffbe6;
-    border: 1px solid #e6d98a;
-  }
-
-  /* ---------- worksheet ---------- */
-  h1 { text-align: center; border-bottom: 3px solid var(--ink); padding-bottom: 8px; margin-bottom: 6px; font-size: 24pt; }
-  .meta-line { text-align: center; font-size: 10pt; color: #666; margin: -2px 0 14px; font-family: Verdana, sans-serif; }
-  .name-row { display: flex; justify-content: space-between; font-size: 14pt; margin-bottom: 22px; }
-  .name-row span { border-bottom: 1px solid var(--ink); display: inline-block; min-width: 200px; }
-  h2 { font-size: 19pt; margin-top: 22px; margin-bottom: 12px; }
-
+  /* subtraction-specific components */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; }
   .grid .num { font-weight: bold; margin-right: 8px; }
-
   .word-problem { margin-bottom: 20px; page-break-inside: avoid; border-top: 1px dashed #bbb; padding-top: 14px; }
   .word-problem:first-child { border-top: none; }
   .word-problem .label { font-weight: bold; margin-right: 6px; }
   .problem-body { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 10px 0; }
-
   .equation-boxes { display: inline-flex; align-items: center; gap: 8px; font-size: 24pt; flex-shrink: 0; }
   .equation-boxes .op, .equation-boxes .equals { display: inline-flex; align-items: center; justify-content: center; }
   .equation-boxes .op { width: 44px; height: 44px; border: 2px solid var(--ink); box-sizing: border-box; }
   .equation-boxes .op.circle { border-radius: 50%; }
   .equation-boxes .equals { font-weight: bold; padding: 0 4px; }
   .equation-given { font-size: 22pt; white-space: nowrap; flex-shrink: 0; }
-
-  /* inputs that double as answer blanks */
-  .field { position: relative; display: inline-flex; align-items: center; }
-  input.ans, input.wblank {
-    font: inherit; text-align: center; border: none; border-bottom: 2px solid var(--ink);
-    background: transparent; color: var(--ink);
-  }
+  input.ans, input.wblank { font: inherit; text-align: center; border: none; border-bottom: 2px solid var(--ink); background: transparent; color: var(--ink); }
   input.ans { width: 66px; }
   input.wblank { width: 96px; }
-  input.boxin {
-    width: 44px; height: 44px; border: 2px solid var(--ink); box-sizing: border-box;
-    text-align: center; font-size: 22pt; font-family: inherit; background: transparent; color: var(--ink);
-  }
-  input.correct { color: var(--right); border-color: var(--right); }
-  input.incorrect { color: var(--wrong); border-color: var(--wrong); }
-  .correction { color: var(--wrong); font-size: 12pt; margin-left: 4px; font-weight: bold; }
-
-  /* helper pictures */
+  input.boxin { width: 44px; height: 44px; border: 2px solid var(--ink); box-sizing: border-box; text-align: center; font-size: 22pt; font-family: inherit; background: transparent; color: var(--ink); }
   .helper { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px; max-width: 52%; }
   .obj { width: 32px; height: 32px; vertical-align: middle; margin: 0 1px; }
   .obj-sm { width: 26px; height: 26px; }
@@ -97,75 +30,43 @@
   .group { display: inline-flex; align-items: center; flex-wrap: wrap; }
   .group.removed { margin-left: 14px; }
   .crossed { position: relative; display: inline-block; }
-  .crossed::after {
-    content: '\2715'; position: absolute; inset: 0; display: flex; align-items: center;
-    justify-content: center; font-size: 26px; font-weight: bold; color: var(--ink);
-  }
+  .crossed::after { content: '\2715'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: var(--ink); }
   .scene { position: relative; display: inline-block; vertical-align: middle; }
   .scene .scene-objects { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 1px; }
-
-  .footer { text-align: center; font-size: 11pt; margin-top: 26px; color: #555; }
-
-  @media print {
-    body { padding: 0; }
-    .no-print { display: none !important; }
-    input.correct, input.incorrect { color: var(--ink); border-color: var(--ink); }
-    .correction { display: none; }
-  }
 </style>
 </head>
 <body>
 
-<!-- ===================== CONTROL PANEL ===================== -->
-<div class="panel no-print">
-  <div style="margin-bottom:10px;"><a href="index.html" style="color:#2563eb;text-decoration:none;font-weight:bold;">&larr; All worksheets</a></div>
-  <h3>🧮 Subtraction Worksheet Generator</h3>
-  <div class="fields">
-    <label>Seed
-      <input type="text" id="f-seed" placeholder="any word or number">
-    </label>
-    <label>Max number
-      <input type="number" id="f-max" min="10" max="25">
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" id="f-zero"> Allow 0 answers
-    </label>
-    <label>Equations
-      <input type="number" id="f-bare" min="0" max="40">
-    </label>
-    <label>Given problems
-      <input type="number" id="f-given" min="0" max="30">
-    </label>
-    <label>Take-away boxes
-      <input type="number" id="f-btk" min="0" max="30">
-    </label>
-    <label>Part-whole boxes
-      <input type="number" id="f-pw" min="0" max="30">
-    </label>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>🧮 Subtraction Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Largest number used (10–25). Most sheets keep the answers within 10.">Max number <input type="number" id="f-max" min="10" max="25"></label>
+      <label class="checkbox" data-tip="Allow some answers to be 0, e.g. 8 − 8 = 0."><input type="checkbox" id="f-zero"> Allow 0 answers</label>
+      <label data-tip="Plain ‘a − b = ’ equations to solve.">Equations <input type="number" id="f-bare" min="0" max="40"></label>
+      <label data-tip="Word problems with the equation shown and both groups of objects (kept + crossed-out).">Given problems <input type="number" id="f-given" min="0" max="30"></label>
+      <label data-tip="Word problems with empty boxes and one full group of objects to count.">Take-away boxes <input type="number" id="f-btk" min="0" max="30"></label>
+      <label data-tip="‘How many are hidden?’ problems showing the visible objects and a container.">Part-whole boxes <input type="number" id="f-pw" min="0" max="30"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Same seed + settings always makes the same worksheet (e.g. <code>?seed=janelle&amp;max=12</code>).
+      Type answers and press <b>Submit &amp; Mark</b>, or <b>Print</b> and do it on paper.</div>
   </div>
-  <div class="btns">
-    <button class="go" id="b-apply">Generate</button>
-    <button id="b-random">🎲 Random seed</button>
-    <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
-    <button id="b-reset">Clear answers</button>
-    <button id="b-print">🖨️ Print</button>
-  </div>
-  <div class="hint">
-    Same seed + same settings always makes the same worksheet, so you can re-print or share a link
-    (e.g. <code>?seed=janelle&amp;max=12</code>). Children can type answers and press <b>Submit &amp; Mark</b>,
-    or just <b>Print</b> and do it on paper.
-  </div>
-</div>
+</details>
 
 <div class="score" id="score"></div>
 
-<!-- ===================== WORKSHEET ===================== -->
 <h1>Subtraction Practice</h1>
 <div class="meta-line" id="meta"></div>
-<div class="name-row">
-  <div>Name: <span></span></div>
-  <div>Date: <span></span></div>
-</div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
 
 <h2 id="h-eq">1. Solve the equations.</h2>
 <div class="grid" id="equations"></div>
@@ -173,54 +74,27 @@
 <h2 id="h-wp">2. Solve the word problems.</h2>
 <div id="problems"></div>
 
-<div class="footer">
-  Great job! &nbsp; <span style="font-size:9pt;">Pictures: Twemoji (Twitter, CC-BY 4.0)</span>
-</div>
+<div class="footer">Great job! &nbsp; <span style="font-size:9pt;">Pictures: Twemoji (Twitter, CC-BY 4.0)</span></div>
 
+<script src="assets/worksheet.js"></script>
 <script>
 "use strict";
 
-/* ---------------- seeded RNG (deterministic per seed string) ---------------- */
-function xmur3(str){
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return function(){
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return (h ^= h >>> 16) >>> 0;
-  };
-}
-function mulberry32(a){
-  return function(){
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* ---------------- config from URL ---------------- */
-const Q = new URLSearchParams(location.search);
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const toInt = (v, d) => { const n = parseInt(v, 10); return isNaN(n) ? d : n; };
+/* ---------------- config ---------------- */
 const cfg = {
-  seed:  Q.get('seed') || '1',
-  max:   clamp(toInt(Q.get('max'), 10), 10, 25),
-  zero:  Q.get('zero') === '1',
-  bare:  clamp(toInt(Q.get('bare'), 5), 0, 40),
-  given: clamp(toInt(Q.get('given'), 4), 0, 30),
-  btk:   clamp(toInt(Q.get('btk'), 3), 0, 30),
-  pw:    clamp(toInt(Q.get('pw'), 3), 0, 30),
+  seed:  WS.Q.get('seed') || WS.randomSeed(),
+  max:   WS.clamp(WS.toInt(WS.Q.get('max'), 10), 10, 25),
+  zero:  WS.Q.get('zero') === '1',
+  bare:  WS.clamp(WS.toInt(WS.Q.get('bare'), 5), 0, 40),
+  given: WS.clamp(WS.toInt(WS.Q.get('given'), 4), 0, 30),
+  btk:   WS.clamp(WS.toInt(WS.Q.get('btk'), 3), 0, 30),
+  pw:    WS.clamp(WS.toInt(WS.Q.get('pw'), 3), 0, 30),
 };
-const rng = mulberry32(xmur3(cfg.seed)());
+const rng = WS.makeRng(cfg.seed);
 const randInt = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
 /* ---------------- assets: containers + noun catalog ---------------- */
 const TW = cp => 'assets/twemoji/' + cp + '.svg';
-
 const CONT = {
   box:    { cp:'1f4e6', phrase:'in the box' },
   case:   { cp:'1f4e6', phrase:'in the case' },
@@ -231,8 +105,6 @@ const CONT = {
   garage: { cp:'1f3e0', phrase:'in the garage' },
   cloud:  { cp:'2601',  phrase:'behind the cloud' },
 };
-
-// each noun bundles its picture, grammar, compatible verbs, optional scene & containers
 const NOUNS = [
   { cp:'1f34e', one:'apple', many:'apples', place:'on a plate', leftPlace:'', scene:null,
     actions:[{s:'is eaten', p:'are eaten', ofThe:true}], containers:['basket'] },
@@ -270,17 +142,15 @@ const NOUNS = [
     actions:[{s:'is borrowed', p:'are borrowed', ofThe:true}], containers:[] },
   { cp:'1f36c', one:'candy', many:'candies', place:'on a plate', leftPlace:'', scene:null,
     actions:[{s:'is eaten', p:'are eaten', ofThe:true}], containers:['bag','jar'] },
-  // part-whole specialists (live in containers, no take-away action)
   { cp:'270f',  one:'pencil', many:'pencils', place:'', leftPlace:'', scene:null, actions:[], containers:['box','case'] },
   { cp:'1f58d', one:'crayon', many:'crayons', place:'', leftPlace:'', scene:null, actions:[], containers:['box','case'] },
   { cp:'1f535', one:'marble', many:'marbles', place:'', leftPlace:'', scene:null, actions:[], containers:['bag','pouch'] },
   { cp:'2b50',  one:'star', many:'stars', place:'', leftPlace:'', scene:null, actions:[], containers:['cloud'] },
 ];
-
 const TAKEAWAY_POOL = NOUNS.filter(n => n.actions.length > 0);
 const PARTWHOLE_POOL = NOUNS.filter(n => n.containers.length > 0);
 
-/* ---------------- sampling without repeats within a sheet ---------------- */
+/* sampling without repeats within a sheet */
 const usedCP = new Set();
 function pick(pool){
   const avail = pool.filter(n => !usedCP.has(n.cp));
@@ -291,41 +161,26 @@ function pick(pool){
 }
 const pickList = arr => arr[Math.floor(rng() * arr.length)];
 
-/* ---------------- build the problem model ---------------- */
-const LO = Math.min(3, cfg.max);              // smallest minuend
-const floor = cfg.zero ? 0 : 1;               // smallest allowed answer
-
-function newTakeaway(){
-  const M = randInt(Math.max(LO, 2), cfg.max);
-  const S = randInt(1, M - floor);
-  return { M, S, ans: M - S };
-}
-function newPartWhole(){
-  const M = randInt(Math.max(LO, 2), cfg.max);
-  const V = randInt(1, M - floor);            // visible (known) part
-  return { M, V, ans: M - V };
-}
+/* build the problem model */
+const LO = Math.min(3, cfg.max);
+const floor = cfg.zero ? 0 : 1;
+function newTakeaway(){ const M = randInt(Math.max(LO, 2), cfg.max); const S = randInt(1, M - floor); return { M, S, ans: M - S }; }
+function newPartWhole(){ const M = randInt(Math.max(LO, 2), cfg.max); const V = randInt(1, M - floor); return { M, V, ans: M - V }; }
 
 const bareList = Array.from({ length: cfg.bare }, newTakeaway);
-
 const wordList = [];
 for (let i = 0; i < cfg.given; i++) wordList.push({ kind:'A', noun: pick(TAKEAWAY_POOL), ...newTakeaway() });
 for (let i = 0; i < cfg.btk;   i++) wordList.push({ kind:'B', noun: pick(TAKEAWAY_POOL), ...newTakeaway() });
-for (let i = 0; i < cfg.pw;    i++) {
-  const noun = pick(PARTWHOLE_POOL);
-  wordList.push({ kind:'C', noun, container: CONT[pickList(noun.containers)], ...newPartWhole() });
-}
+for (let i = 0; i < cfg.pw;    i++) { const noun = pick(PARTWHOLE_POOL); wordList.push({ kind:'C', noun, container: CONT[pickList(noun.containers)], ...newPartWhole() }); }
 
-/* ---------------- rendering helpers ---------------- */
+/* rendering helpers */
 const img  = (cp, cls) => '<img class="' + cls + '" src="' + TW(cp) + '" alt="">';
 function imgs(cp, n, small, crossed){
-  const cls = 'obj' + (small ? ' obj-sm' : '');
-  let out = '';
+  const cls = 'obj' + (small ? ' obj-sm' : ''); let out = '';
   for (let i = 0; i < n; i++) out += crossed ? '<span class="crossed">' + img(cp, cls) + '</span>' : img(cp, cls);
   return out;
 }
 const grp = (html, removed) => '<span class="group' + (removed ? ' removed' : '') + '">' + html + '</span>';
-
 const SCENES = {
   tank: inner =>
     '<span class="scene" style="width:200px;height:84px;">' +
@@ -341,19 +196,13 @@ const SCENES = {
     '<path d="M 28 34 Q 60 38, 100 34 T 175 34" fill="none" stroke="#000" stroke-width="1"/>' +
     '</svg><span class="scene-objects">' + inner + '</span></span>',
 };
-function sceneOrGroup(noun, count, small){
-  const inner = imgs(noun.cp, count, small, false);
-  return (noun.scene && count <= 8) ? SCENES[noun.scene](inner) : grp(inner, false);
-}
+function sceneOrGroup(noun, count, small){ const inner = imgs(noun.cp, count, small, false); return (noun.scene && count <= 8) ? SCENES[noun.scene](inner) : grp(inner, false); }
 
-// gradable inputs (data-answer is the correct value the marker checks against)
 const ansIn    = a => '<span class="field"><input class="ans gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
 const wblankIn = a => '<span class="field"><input class="wblank gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
 const boxIn    = a => '<span class="field"><input class="boxin gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
 const boxesEq  = (a, b, c) =>
-  '<div class="equation-boxes">' + boxIn(a) +
-  '<span class="op circle"></span>' + boxIn(b) +
-  '<span class="equals">=</span>' + boxIn(c) + '</div>';
+  '<div class="equation-boxes">' + boxIn(a) + '<span class="op circle"></span>' + boxIn(b) + '<span class="equals">=</span>' + boxIn(c) + '</div>';
 
 function actionLine(noun, S){
   const a = pickList(noun.actions);
@@ -366,120 +215,40 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function renderProblem(p, i){
   let l1, l2, eq, helper, tail;
   const label = (i + 1) + '.';
-
-  if (p.kind === 'A' || p.kind === 'B'){           // take-away
+  if (p.kind === 'A' || p.kind === 'B'){
     l1 = 'There are ' + p.M + ' ' + p.noun.many + (p.noun.place ? ' ' + p.noun.place : '') + '.';
     l2 = cap(actionLine(p.noun, p.S));
-    tail = 'There are ' + wblankIn(p.ans) + ' ' + p.noun.many + ' left' +
-           (p.noun.leftPlace ? ' ' + p.noun.leftPlace : '') + '.';
-    if (p.kind === 'A'){                            // given equation + both groups (kept + crossed)
+    tail = 'There are ' + wblankIn(p.ans) + ' ' + p.noun.many + ' left' + (p.noun.leftPlace ? ' ' + p.noun.leftPlace : '') + '.';
+    if (p.kind === 'A'){
       eq = '<div class="equation-given">' + p.M + ' &minus; ' + p.S + ' = ' + ansIn(p.ans) + '</div>';
       const small = !!p.noun.scene;
-      const kept  = (p.noun.scene && (p.M - p.S) <= 8)
-        ? SCENES[p.noun.scene](imgs(p.noun.cp, p.M - p.S, small, false))
-        : grp(imgs(p.noun.cp, p.M - p.S, small, false), false);
+      const kept = (p.noun.scene && (p.M - p.S) <= 8) ? SCENES[p.noun.scene](imgs(p.noun.cp, p.M - p.S, small, false)) : grp(imgs(p.noun.cp, p.M - p.S, small, false), false);
       helper = kept + grp(imgs(p.noun.cp, p.S, small, true), true);
-    } else {                                        // empty boxes + one group (all M objects)
+    } else {
       eq = boxesEq(p.M, p.S, p.ans);
       helper = sceneOrGroup(p.noun, p.M, !!p.noun.scene);
     }
-  } else {                                          // C: part-whole, empty boxes + one group + container
+  } else {
     l1 = 'There are ' + p.M + ' ' + p.noun.many + ' altogether.';
     l2 = 'How many ' + p.noun.many + ' are ' + p.container.phrase + '?';
     eq = boxesEq(p.M, p.V, p.ans);
     helper = grp(imgs(p.noun.cp, p.V, false, false), false) + img(p.container.cp, 'container-icon');
     tail = 'There are ' + wblankIn(p.ans) + ' ' + p.noun.many + ' ' + p.container.phrase + '.';
   }
-
   return '<div class="word-problem"><span class="label">' + label + '</span> ' + l1 + '<br>' + l2 +
-         '<div class="problem-body">' + eq + '<div class="helper">' + helper + '</div></div>' +
-         tail + '</div>';
+         '<div class="problem-body">' + eq + '<div class="helper">' + helper + '</div></div>' + tail + '</div>';
 }
 
-/* ---------------- paint the page ---------------- */
+/* paint */
 document.getElementById('equations').innerHTML = bareList.map((e, i) =>
-  '<div><span class="num">' + (i + 1) + '.</span> ' + e.M + ' &minus; ' + e.S + ' = ' + ansIn(e.ans) + '</div>'
-).join('');
+  '<div><span class="num">' + (i + 1) + '.</span> ' + e.M + ' &minus; ' + e.S + ' = ' + ansIn(e.ans) + '</div>').join('');
 document.getElementById('problems').innerHTML = wordList.map(renderProblem).join('');
-document.getElementById('meta').textContent =
-  'seed: ' + cfg.seed + '  •  numbers up to ' + cfg.max + (cfg.zero ? '  •  0 allowed' : '');
+document.getElementById('meta').textContent = 'seed: ' + cfg.seed + '  •  numbers up to ' + cfg.max + (cfg.zero ? '  •  0 allowed' : '');
 if (cfg.bare === 0) document.getElementById('h-eq').style.display = 'none';
 if (wordList.length === 0) document.getElementById('h-wp').style.display = 'none';
 
-/* ---------------- marking ---------------- */
-const WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
-  'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty',
-  'twenty-one','twenty-two','twenty-three','twenty-four','twenty-five'];
-const WMAP = {};
-WORDS.forEach((w, i) => { WMAP[w] = i; WMAP[w.replace('-', ' ')] = i; WMAP[w.replace('-', '')] = i; });
-function parseAnswer(s){
-  s = (s || '').trim().toLowerCase();
-  if (s === '') return NaN;
-  if (/^\d+$/.test(s)) return Number(s);
-  return (s in WMAP) ? WMAP[s] : NaN;
-}
-
-const scoreEl = document.getElementById('score');
-function mark(){
-  let total = 0, right = 0;
-  document.querySelectorAll('input.gradable').forEach(inp => {
-    total++;
-    const correct = Number(inp.dataset.answer);
-    const val = parseAnswer(inp.value);
-    inp.classList.remove('correct', 'incorrect');
-    const old = inp.parentNode.querySelector('.correction');
-    if (old) old.remove();
-    if (val === correct){ inp.classList.add('correct'); right++; }
-    else {
-      inp.classList.add('incorrect');
-      const s = document.createElement('span');
-      s.className = 'correction';
-      s.textContent = '(' + correct + ')';
-      inp.after(s);
-    }
-  });
-  const pct = total ? Math.round(right / total * 100) : 0;
-  const face = pct === 100 ? ' 🌟' : pct >= 70 ? ' 😀' : ' 💪';
-  scoreEl.textContent = 'Score: ' + right + ' / ' + total + '  (' + pct + '%)' + face;
-  scoreEl.style.display = 'block';
-  scoreEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-function clearAnswers(){
-  document.querySelectorAll('input.gradable').forEach(inp => {
-    inp.value = '';
-    inp.classList.remove('correct', 'incorrect');
-    const old = inp.parentNode.querySelector('.correction');
-    if (old) old.remove();
-  });
-  scoreEl.style.display = 'none';
-}
-
-/* ---------------- control panel wiring ---------------- */
-const $ = id => document.getElementById(id);
-$('f-seed').value = cfg.seed;
-$('f-max').value  = cfg.max;
-$('f-zero').checked = cfg.zero;
-$('f-bare').value  = cfg.bare;
-$('f-given').value = cfg.given;
-$('f-btk').value   = cfg.btk;
-$('f-pw').value    = cfg.pw;
-
-function apply(){
-  const p = new URLSearchParams();
-  p.set('seed', $('f-seed').value || '1');
-  p.set('max', clamp(toInt($('f-max').value, 10), 10, 25));
-  p.set('zero', $('f-zero').checked ? '1' : '0');
-  p.set('bare', $('f-bare').value);
-  p.set('given', $('f-given').value);
-  p.set('btk', $('f-btk').value);
-  p.set('pw', $('f-pw').value);
-  location.search = p.toString();
-}
-$('b-apply').onclick  = apply;
-$('b-random').onclick = () => { $('f-seed').value = Math.random().toString(36).slice(2, 8); apply(); };
-$('b-submit').onclick = mark;
-$('b-reset').onclick  = clearAnswers;
-$('b-print').onclick  = () => window.print();
+/* wiring — marking is the shared engine (all inputs default to the numeric kind) */
+WS.wirePanel(cfg, ['max','zero','bare','given','btk','pw'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
 </script>
 
 </body>

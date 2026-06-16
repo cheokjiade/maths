@@ -1,166 +1,141 @@
 # Shared conventions
 
-Every worksheet generator in this repo (`subtraction.html`, `addition.html`, `shapes.html`,
-`ordinals.html`) is an independent, self-contained static page, yet they all share the same
-skeleton. This document describes the conventions common to all of them so the per-file specs can
-stay focused on what is unique. **If you change one of these contracts, change it in every
-generator and update [`verify.md`](verify.md).**
+Every worksheet generator in this repo (`addition.html`, `subtraction.html`, `shapes.html`,
+`ordinals.html`, `numbers20.html`) is a static page that shares one engine and one stylesheet:
+
+- **`assets/worksheet.css`** — all the common styling (panel, score, headers, inputs, chips, print).
+- **`assets/worksheet.js`** — the shared engine, exposed as a global **`WS`** (PRNG, config helpers,
+  number-word parsing, the marking contract, chip wiring, the control-panel wiring, tooltips).
+
+Each page keeps only its **topic-specific** `<style>` (components unique to it) and `<script>` (its
+question generators + a little glue). **If you change one of these shared contracts, update
+`assets/worksheet.*` and re-run [`verify.md`](verify.md) — it exercises all five pages.**
 
 ---
 
-## 1. One file = one app
+## 1. Loads from `file://` — classic includes only
 
-Each generator is a single `.html` file with **inline `<style>` and `<script>`** — no build step, no
-imports, no runtime third-party requests. The only external references are local SVG icons under
-`assets/twemoji/` (shared by all pages). This is what makes the pages work opened straight from disk
-and when served as static files from GitHub Pages.
+The shared files are pulled in with a plain stylesheet link and a **classic** script tag:
 
-To add a topic: drop a new page at the repo root (so it shares `assets/`) and add a card in
-`index.html`.
+```html
+<link rel="stylesheet" href="assets/worksheet.css">
+<script src="assets/worksheet.js"></script>   <!-- NOT type="module" -->
+```
+
+This is deliberate: classic `<script src>` and `<link>` work when the page is opened straight from
+disk (`file://`, double-click). **ES modules / `import` / `fetch()` of local files do _not_ work from
+`file://`** (blocked by CORS), so the engine must stay a classic global-`WS` script. Everything else
+is local too (Twemoji SVGs under `assets/twemoji/`), so the pages work fully offline and on GitHub
+Pages alike. A page + the `assets/` folder is the unit of deployment.
+
+To add a topic: drop a new page at the repo root (so it shares `assets/`), link the two shared files,
+and add a card in `index.html`.
 
 ---
 
 ## 2. Determinism — the seeded PRNG
 
-All randomness comes from a string **seed**, so the same seed + same settings always produce a
-byte-for-byte identical worksheet (reproducible, shareable, re-printable). Every generator uses the
-same two well-known functions, copied verbatim into each file:
+All randomness comes from a string **seed**, so the same seed + settings always produce a
+byte-for-byte identical worksheet. The PRNG lives in the engine:
 
 ```javascript
-// xmur3: hash a seed string into a 32-bit integer
-function xmur3(str){
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++){
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return function(){
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return (h ^= h >>> 16) >>> 0;
-  };
-}
-// mulberry32: turn that integer into a stream of floats in [0,1)
-function mulberry32(a){
-  return function(){
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const rng = mulberry32(xmur3(cfg.seed)());   // hash the seed once, seed the stream
+const rng = WS.makeRng(cfg.seed);                 // xmur3(seed) -> mulberry32 stream
+const { randInt, pick, shuffle, distinct } = WS.helpers(rng);   // rng-bound helpers
 ```
 
-Helpers built on `rng()` are likewise near-identical across files:
+`WS.makeRng` is `mulberry32(xmur3(String(seed))())`; `WS.helpers(rng)` returns the inclusive
+`randInt`, `pick`, Fisher–Yates `shuffle`, and `distinct(k,lo,hi)` (k distinct ints).
+
+> **Gotcha:** the RNG is consumed in a fixed order, so *inserting a new `rng()` call anywhere shifts
+> every later draw* — the same seed then renders a different sheet. Acceptable (seeds aren't promised
+> stable across code versions) but you can't reorder generator calls without changing worksheets.
+
+### Random seed on a fresh visit
+
+If the URL has **no** `?seed=`, the page picks a short random one (`WS.randomSeed()`, ~5 chars) so each
+fresh open differs, then `WS.wirePanel` writes it back into the address bar with
+`history.replaceState` — so the worksheet stays reproducible/bookmarkable on refresh.
 
 ```javascript
-const randInt = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));   // inclusive
-const pick    = arr => arr[Math.floor(rng() * arr.length)];
-const shuffle = a => { /* Fisher–Yates using rng() */ };
+const cfg = { seed: WS.Q.get('seed') || WS.randomSeed(), /* …counts… */ };
 ```
-
-> **Gotcha:** because the RNG is consumed in a fixed order, *inserting a new `rng()` call anywhere
-> shifts every subsequent draw* — so the same seed renders a different sheet. That is acceptable
-> (seeds aren't promised stable across code versions) but means you cannot reorder generator calls
-> without changing existing worksheets.
 
 ### Draw-without-replacement for pictures
 
-Generators that show emoji objects keep a `used`/`usedCP` `Set` of codepoints and prefer unused
-objects, falling back to the full pool only when it is exhausted, so a single sheet shows variety:
-
-```javascript
-const used = new Set();
-function pickNoun(){
-  const av = NOUNS.filter(n => !used.has(n.cp));
-  const n  = pick(av.length ? av : NOUNS);
-  used.add(n.cp);
-  return n;
-}
-```
-
-The set is **not** cleared between sections, so very long sheets repeat objects in later sections.
+Generators that show emoji objects keep a `used` `Set` of codepoints and prefer unused ones, falling
+back to the full pool when exhausted, so a sheet shows variety. The set is not cleared between
+sections, so very long sheets repeat objects later.
 
 ---
 
-## 3. Configuration via URL query parameters
+## 3. Configuration & the control panel
 
-Config is read from `location.search` (so a worksheet is shareable as a link) and mirrored in the
-control panel. Every numeric param is **clamped** to a safe range; the seed defaults to `'1'`.
-Clicking **Generate** rebuilds the query string and reloads the page (a soft reload via
-`location.search`); a section whose count is `0` hides its heading.
+Config is read from `location.search` via `WS.Q` and clamped with `WS.clamp` / `WS.toInt`:
 
 ```javascript
-const Q = new URLSearchParams(location.search);
-const cfg = { seed: Q.get('seed') || '1', /* …clamp(toInt(Q.get(x), default), lo, hi)… */ };
+const cfg = { seed: WS.Q.get('seed') || WS.randomSeed(),
+              count: WS.clamp(WS.toInt(WS.Q.get('count'), 3), 0, 20), /* … */ };
 ```
 
-The control panel (`.no-print`) always offers: **Generate**, **🎲 Random seed**, **✅ Submit &
-Mark**, **Clear answers**, **🖨️ Print**.
+The panel is a **collapsible `<details class="panel no-print" id="ws-panel" open>`** with a
+`<summary>` title. `WS.wirePanel(cfg, keys, {mark, clear})`:
+
+- fills the `f-<key>` fields from `cfg` (checkbox keys use `.checked`),
+- wires **Generate** (rebuild query + reload), **🎲 Random seed**, **Submit**, **Clear**, **Print**,
+- writes the generated seed to the URL if `?seed=` was absent,
+- **collapses the panel on phones** (`window.innerWidth < 700` → `details.open = false`) so it doesn't
+  fill the screen,
+- activates **tooltips**: any panel `<label data-tip="…">` shows its text on hover (desktop) or tap
+  (touch) via a single floating `.ws-tip`.
+
+A section whose count is `0` renders nothing (its heading is omitted).
 
 ---
 
 ## 4. The marking contract
 
-This is the shared interface the verifier depends on. Two kinds of gradable elements:
+This is the shared interface the verifier depends on. `WS.mark(opts)` tallies three things and writes
+`Score: R / T (P%)` to `#score` (the verifier reads `/Score:\s*(\d+)\s*\/\s*(\d+)/`).
 
-**(a) Typed-answer inputs** carry the correct value in a data attribute and a `gradable` class:
-
-```html
-<input class="ans gradable" data-answer="6" type="text" inputmode="numeric" autocomplete="off">
-```
-
-**(b) Tappable chips** (multiple-choice / colour-match / shape-select) carry `data-ok`:
+**(a) Typed-answer inputs** — class `gradable`, the correct value in `data-answer`, and an optional
+`data-kind` selecting the normaliser (default `num`):
 
 ```html
-<button class="chip" data-ok="1">first</button>   <!-- data-ok="1" = should be selected -->
+<input class="ans gradable" data-answer="6" type="text" inputmode="numeric">   <!-- num -->
+<input class="txt gradable" data-kind="name" data-answer="circle" type="text">  <!-- custom -->
 ```
 
-`Submit & Mark` walks both:
+`num` accepts digits or spelled number-words 0–25 (`WS.parseNum`). Pages register extra kinds with
+`WS.addKind(name, (value, answer) => bool)` — e.g. ordinals adds `ord` (3rd/third/3), `letter`,
+`name`; shapes adds `name`.
 
-- Inputs: parse the value (digits **or** spelled-out number words — see below), compare to
-  `data-answer`, add `.correct` / `.incorrect`, and on a miss insert a `.correction` span showing the
-  right value.
-- Chip blocks: each block counts as **one** point, all-or-nothing — a block is correct only if every
-  `data-ok="1"` chip is selected and no others are. States: `.correct` (selected & right),
-  `.incorrect` (selected & wrong), `.missed` (unselected & should be).
+**(b) Tappable chips** — `.sel-block` (or `.match-block`) containing `.chip[data-ok]` buttons.
+`WS.wireChips()` makes `data-mode="one"` blocks behave like radios and `many`/`match-block` like
+checkboxes. Each block is **one** point, all-or-nothing: `.correct` (selected & right), `.incorrect`
+(selected & wrong), `.missed` (unselected & should be).
 
-Number-word parsing accepts digits or words (and hyphen variants where the range needs them):
+**(c) Custom markers** — pass `extras: [fn, …]` where each `fn` returns `{total, right}` and does its
+own painting; use `skip: inp => …` to exclude inputs the extras handle. Shapes uses this for the
+order-independent **compose** pair and the copy-the-figure **grid** (segments matched as unordered
+keys, all-or-nothing per grid — see [`shapes.md`](shapes.md)).
 
 ```javascript
-function parseAnswer(s){
-  s = (s || '').trim().toLowerCase();
-  if (s === '') return NaN;
-  if (/^\d+$/.test(s)) return Number(s);
-  return (s in WMAP) ? WMAP[s] : NaN;   // 'three' / 'twenty-one' / 'twenty one' → number
-}
+WS.wirePanel(cfg, KEYS, {
+  mark:  () => WS.mark({ skip: i => i.closest('[data-compose]'), extras: [composeExtra, gridExtra] }),
+  clear: () => WS.clearAll(gridClear),
+});
 ```
-
-A running score (`right / total`) is written to an element with `id="score"` in the form
-`Score: R / T`, which the verifier reads with `/Score:\s*(\d+)\s*\/\s*(\d+)/`.
-
-### Interactive grid figures (shapes only)
-
-`shapes.html` adds a third gradable type: a copy-the-figure grid. The target lines live in a
-sibling SVG; the user-drawn lines live in an `svg[data-grid]`. Segments are matched as **unordered
-pairs** via a normalised key, all-or-nothing per grid. See [`shapes.md`](shapes.md) §grid.
 
 ---
 
 ## 5. Printing
 
-A `@media print` block:
-
-- hides everything `.no-print` (control panel, buttons, score),
-- resets `.correct`/`.incorrect` colours back to ink black and hides `.correction` spans, so a sheet
-  marked on screen prints **clean** (no answers leaked, no colour),
-- uses `@page { size: A4; margin: … }` and `page-break-inside: avoid` on each item so problems don't
-  split across pages.
-
-The visual language throughout is a children's worksheet — Comic Sans / Century Gothic stack, large
-rounded type, generous spacing, black-and-white line art — deliberately **not** a web dashboard
-(no card shadows, gradients, or app chrome on the printable area).
+`assets/worksheet.css`'s `@media print` block hides everything `.no-print` (panel, buttons, score,
+tooltip), resets `.correct`/`.incorrect` to ink black and hides `.correction` spans (so a sheet marked
+on screen prints clean), neutralises chip colours, and uses `@page { size: A4 }` with
+`page-break-inside: avoid` per item. Pages add their own print tweaks for bespoke parts (e.g. shapes
+hides the grid's dashed "missing" ghosts). The visual language is a children's worksheet — Comic
+Sans / Century Gothic, large rounded type, black-and-white line art — not a web dashboard.
 
 ---
 
@@ -168,9 +143,19 @@ rounded type, generous spacing, black-and-white line art — deliberately **not*
 
 Icons are **Twemoji** (Twitter, CC-BY 4.0), one SVG per icon named by Unicode codepoint, committed
 under `assets/twemoji/` and referenced as `assets/twemoji/<codepoint>.svg`. **No CDN, no system-emoji
-fallback** — the pages must work fully offline, and OS emoji render differently per device. Composite
-scenes with no single emoji (fish tank, pond) are drawn as inline SVG with object icons placed on
-top. Attribution to Twemoji sits in each page footer.
+fallback** — pages must work offline, and OS emoji render differently per device. Composite scenes
+with no single emoji (fish tank, pond) are inline SVG with icons placed on top. Shapes are drawn
+entirely as inline SVG (no emoji). Emoji used as UI decoration (🎲 ✅ 🖨️) are system glyphs, not
+bundled, and never appear on the printable worksheet.
 
-> Emoji used purely as UI decoration in the control panel/footer (🎲 ✅ 🖨️ 🔷) are system glyphs,
-> not bundled assets — they never appear on the printable worksheet.
+---
+
+## When you add a generator
+
+1. Link `assets/worksheet.css` + `assets/worksheet.js`; keep only page-specific `<style>`/`<script>`.
+2. Build `cfg` from `WS.Q`/`clamp`/`toInt` (seed defaults to `WS.randomSeed()`).
+3. Use the marking contract: `gradable` inputs (+ `WS.addKind` for new answer types), `.sel-block`
+   chips, `extras`/`skip` for anything bespoke. Call `WS.wireChips()` and `WS.wirePanel(...)`.
+4. Use the collapsible `<details id="ws-panel">` panel with `data-tip` on each field.
+5. Add a spec here (from the template), a `TARGETS` entry in `verify/verify.js`, and a card in
+   `index.html`.
