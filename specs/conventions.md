@@ -56,6 +56,13 @@ Every variant appears once the section's count reaches the number of variants, s
 default count `≥` the variant count (e.g. shapes `group` defaults to 3). The graphs style spread and
 within20's add/subtract balance are the same idea.
 
+The same idea extends from *cosmetic* variants to *content*: when a section would otherwise pick its
+content with replacement (a number, a composite, a figure) and could repeat a whole question, draw
+from a shuffled pool indexed by the question number, or wrap the picker in a `distinctBy(pick, keyOf)`
+that re-rolls past already-used keys. The verifier **fails any generator that renders the same
+question twice** in a section (see [`verify.md`](verify.md)), so distinct content is a hard contract,
+not a nicety.
+
 > **Gotcha:** the RNG is consumed in a fixed order, so *inserting a new `rng()` call anywhere shifts
 > every later draw* — the same seed then renders a different sheet. Acceptable (seeds aren't promised
 > stable across code versions) but you can't reorder generator calls without changing worksheets.

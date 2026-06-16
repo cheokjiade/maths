@@ -19,7 +19,7 @@ land in `verify/out/`. Exit code is non-zero if any target fails.
 
 ## How it works
 
-For each target (subtraction, addition, shapes, ordinals) it runs the same `drive()` twice:
+For each of the nine targets it runs the same `drive()` twice, plus a separate **duplicate scan**:
 
 - **Happy path** — fills every `input.gradable` from its `data-answer`, clicks every
   `.chip[data-ok="1"]`, reconstructs each grid figure, submits, asserts `right === total` and **no
@@ -31,7 +31,7 @@ For each target (subtraction, addition, shapes, ordinals) it runs the same `driv
 ```javascript
 const happyOK = happy.total > 0 && happy.right === happy.total && happy.errs.length === 0;
 const probeOK = probe.total > 0 && probe.right < probe.total;
-const pass = happyOK && probeOK;
+const pass = happyOK && probeOK && !dup.fail;   // + no duplicate questions (see below)
 ```
 
 The score is read from `#score` with `/Score:\s*(\d+)\s*\/\s*(\d+)/`.
@@ -52,6 +52,31 @@ conventions documented in [`conventions.md`](conventions.md) §4:
 **A new generator that follows those conventions is added by appending one line to the `TARGETS`
 array — no other change.** Conversely, if you break one of those selectors in a generator, the
 verifier is how you'll find out.
+
+---
+
+## Duplicate-question detection (`dupScan` / `sectionSignatures`)
+
+Beyond marking, the verifier checks that a section never asks the **same question twice**. For each
+target it loads the page at higher per-section counts (`DUP_PARAMS`, each kept ≤ that section's pool
+size) across **three seeds**; in-page `sectionSignatures()` groups every `.item` under its `<h2>` and
+hashes it to a signature — prompt text + sorted correct answers + selected-chip contents + colour-N
+needs + order tiles + grid target lines. Two questions with the same signature are duplicates.
+
+The signature is **content, not pixels**: two "colour every rectangle" questions with *different*
+rectangles differ (their chips differ) and pass; two genuinely identical questions collide. A section
+is failed only when duplicates recur in **≥2 of the 3 seeds** (systemic — a generator picking content
+*with replacement*), so a one-off coincidental collision in a single seed is ignored. The gate applies
+to **every** generator:
+
+```javascript
+const dupGateFail = dup.fail;                 // any systemic duplicate fails the target
+const pass = happyOK && probeOK && !dupGateFail;
+```
+
+This is what caught content-picked-with-replacement bugs in numbers10/20, ordinals and addition; the
+fix is a distinct pool or a `distinctBy()` wrapper in the generator (the same idea as `balanced()` —
+see [`conventions.md`](conventions.md) §2).
 
 ---
 
@@ -81,5 +106,7 @@ out[svg.id] = [...left.querySelectorAll('line.gtarget')].map(L => {
   default question counts in each generator, so don't hard-code them.
 - `node_modules/` and `out/` are git-ignored.
 - The shapes target passes an all-sections-on params string so every exercise type is exercised.
+- `DUP_PARAMS` raises per-section counts for the duplicate scan; keep each **≤ that section's pool
+  size**, or the section duplicates unavoidably (pigeonhole) and fails for the wrong reason.
 - It asserts **zero console errors** on the happy path — a generator that throws during render fails
   even if the visible score looks fine.

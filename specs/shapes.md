@@ -27,20 +27,22 @@ markers** (the order-independent compose pair and the grid) on top of the shared
 
 | Section (fn) | Asks | Child does | Visual |
 |--------------|------|------------|--------|
-| Name (`gName`) | "This shape is a ___" | types the name | 3–5 instances of one shape, randomly **rotated** (±15/20/30/45°), 40–64px, white fill |
+| Name (`gName`) | "This shape is a ___" | types the name | 3–5 instances of one shape in **varied prototypes** + random size/tilt — a "rectangle" is seen wide, tall and thin |
 | Colour-match (`gMatch`) | "Colour every [shape]" | taps correct shape chips | 5 SVG shape chips; 2–3 correct; tap → yellow, marked green/red |
 | Count (`gCount`) | "There is/are ___ [shape]" ×6 | types six counts | one picture box, a shuffled pool of mixed shapes (0–4 of each kind) |
 | Group (`gGroup`) | "How are these grouped?" | taps size / colour / shape | two boxes (A & B) differing by exactly one of size, colour, or shape |
-| Compose (`gCompose`) | "Name the two shapes" | types two names | a pre-drawn **composite** SVG (e.g. half-circle + triangle) in grey |
+| Compose (`gCompose`) | "Name the two shapes" | types two names | a **composite silhouette** (one outline path) with the **seam drawn**, so both parts show |
 | Object (`gObject`) | "What shape is the [object]?" | taps one of four names | a custom object SVG (window=square, clock=circle, door=rectangle, party hat=triangle) |
-| Grid (`gGrid`) | "Copy the figure onto the grid" | taps two dots to draw a line; taps a line to remove | left: target 6×6 dot grid with black path; right: interactive grid |
-| Draw (`gDraw`) | "Draw a [shape]" | pencils it in | **print-only** blank labelled boxes |
-| Partition (`gPart`) | "Draw lines to split this figure" | pencils dividing lines | **print-only** composite SVG with white fill |
+| Grid (`gGrid`) | "Copy the figure onto the grid" | taps two dots **or drags dot-to-dot (snaps)** to draw a line; taps a line to remove | left: target 6×6 dot grid with black path; right: interactive grid |
+| Draw (`gDraw`) | "Draw a [shape]" | pencils it in | **print-only** blank labelled boxes (distinct shape per box) |
+| Partition (`gPart`) | "Draw a line to split this figure" | pencils the dividing line | **print-only** composite **silhouette, no seam** — parts align by construction |
 
-Shapes are drawn by a small factory: `shapeBody(kind, fill)` emits the right SVG primitive
-(`<circle>`, `<polygon>`, `<rect>`, `<path>`) with the given fill, and `shapeSVG(kind, opts)` wraps it
-in a scaled `<svg>` with a rotation group `<g transform="rotate(rot 50 50)">`. All geometry is tuned
-to a 100×100 viewBox centred on (50,50) so rotation looks right.
+Shapes are drawn by a small factory. `SHAPE_VARIANTS[kind]` holds **several prototypes** per shape
+(rectangle: wide/tall/thin/squat; triangle: isosceles/right/scalene; square & circle: one each — their
+identity *is* the fixed proportion); `shapeBody(kind, fill, variant)` emits one prototype, and
+`shapeSVG(kind, opts)` wraps it in a scaled `<svg>` with a rotation group
+`<g transform="rotate(rot 50 50)">`. `looseOpts(kind)` returns a random `{size, rot, variant}` so each
+free-standing shape differs. All geometry is tuned to a 100×100 viewBox centred on (50,50).
 
 ---
 
@@ -54,7 +56,7 @@ URL params, all clamped:
 | `name` | Name the shape | 4 | 0–20 |
 | `match` | Colour-match | 2 | 0–20 |
 | `count` | Count | 1 | 0–10 |
-| `group` | Group | 2 | 0–10 |
+| `group` | Group | 3 | 0–10 |
 | `compose` | Name 2 parts | 3 | 0–20 |
 | `object` | Object→shape | 3 | 0–20 |
 | `grid` | Copy-grid | 2 | 0–10 |
@@ -98,9 +100,11 @@ function gridExtra(){                        // returns {total,right}; passed to
 ```
 
 Interaction relies on **invisible hit-circles** (`.ghit`, 13px radius, transparent) layered over the
-visible dots, and `touch-action:none` on the grid so dragging doesn't scroll the page. *This is also
-the contract the verifier reconstructs* — it reads `.ghit[data-gx][data-gy]`, finds the dots nearest
-each target line endpoint, and clicks them in pairs (see [`verify.md`](verify.md)).
+visible dots, and `touch-action:none` on the grid so dragging doesn't scroll the page. Two ways to
+join dots: **tap–tap**, or **pointer-drag** from one dot to another — a dashed rubber-band line snaps
+blue to the nearest dot and release commits (pointer events, so mouse + touch, `file://`-safe). *Tap
+is also the contract the verifier reconstructs* — it reads `.ghit[data-gx][data-gy]`, finds the dots
+nearest each target line endpoint, and clicks them in pairs (see [`verify.md`](verify.md)).
 
 ### Other tricky bits
 
@@ -123,8 +127,12 @@ each target line endpoint, and clicks them in pairs (see [`verify.md`](verify.md
 
 - **Rotation is around the viewBox centre (50,50)**, so every shape's geometry must be roughly
   centred or it will appear to orbit when rotated. The hand-tuned coordinates encode this assumption.
-- **Composites and objects are hard-coded SVG strings** (`COMPOSITES`, `OBJECTS`, `FIGS` arrays), not
-  generated — full visual control, but resizing/reusing means editing raw SVG.
+- **Composites are one silhouette `outline` path + a `divider` seam** (`COMPOSITES`), so the two parts
+  always align: `gCompose` draws outline+seam (both parts visible to name), `gPart` draws outline only
+  (the child draws the seam). Objects and grid figures (`OBJECTS`, `FIGS`) are still hard-coded SVG.
+- **No section repeats a question.** `gName/gMatch/gObject/gGrid/gCompose/gDraw/gPart` choose their
+  shape/composite/figure through `balanced()` (a shuffled round-robin keyed by question number), so a
+  section is duplicate-free while its count ≤ its pool size — enforced by the verifier's dup gate.
 - The grid is the reason `shapes` appears in the verifier with a richer params string
   (`…&grid=1&draw=1&part=1`) — every section is forced on so the harness exercises all of them.
 - No Twemoji assets are used; the only emoji (🔷 🎲 ✅ 🖨️ 🔺🔵⬛) are system glyphs in panel/footer.
