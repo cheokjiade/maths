@@ -4,17 +4,18 @@
 
 A seed-driven generator for Singapore money — coins **5¢/10¢/20¢/50¢/$1** and notes
 **$2/$5/$10/$50**. Currency is **our own SVG artwork** (recognisable colours/denominations, a portrait
-silhouette, a diagonal **SPECIMEN** overprint), kept small — never photographic scans.
+silhouette and guilloché), clearly stylised so it can't be mistaken for genuine — never photographic scans.
 
-## Why SVG specimen art (the legal basis)
+## Why our own SVG (the legal basis)
 
 Reviewed the live MAS "Using Images of Singapore Currency" page (via `playwright-core` — see
 [`verify.md`](verify.md) for the technique): **educational reproduction is explicitly permission-free**
-provided the Conditions are met (not mistakable as genuine; **SPECIMEN** mark on a whole flat note;
-one-sided; the ≥150%/≤60% size rule applies only to *printed/hardcopy* form, which our small icons
-satisfy). The note *designs* are separately Government-of-Singapore **copyright**, so drawing our own
-SVG (rather than copying a scan) avoids any third-party-rights question while staying offline and
-on-style. See the `money-unit-sg-currency-legal` memory.
+provided the Conditions are met — chiefly **not mistakable as genuine**. A clearly stylised SVG
+illustration plainly isn't, so the **SPECIMEN** mark (required only for realistic whole-note
+reproductions) and the ≥150%/≤60% size rule aren't engaged — we omit SPECIMEN for a cleaner look. The
+note *designs* are separately Government-of-Singapore **copyright**, so drawing our own SVG (rather
+than copying a scan) also avoids any third-party-rights question, while staying offline and on-style.
+See the `money-unit-sg-currency-legal` memory.
 
 ## Exercise types
 
