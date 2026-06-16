@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add &amp; Subtract within 20 Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* within-20-specific components */
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 40px; }
+  .grid .num, .row .num { font-weight:bold; margin-right:8px; }
+  .row { margin:8px 0; }
+  .qwrap { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .eq { font-size:22pt; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  input.wblank { width:90px; }
+  input.boxin { width:44px; height:44px; border:2px solid var(--ink); box-sizing:border-box; text-align:center; font-size:20pt; font-family:inherit; background:transparent; color:var(--ink); }
+  .eqbox { display:inline-flex; align-items:center; gap:8px; font-size:24pt; }
+  .eqbox .op { width:44px; height:44px; border:2px solid var(--ink); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; }
+  .eqbox .equals { font-weight:bold; padding:0 4px; }
+  .pics { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px; max-width:50%; }
+  .plus { font-size:20pt; margin:0 6px; font-weight:bold; }
+  .obj { width:30px; height:30px; vertical-align:middle; margin:0 1px; }
+  .grp { display:inline-flex; align-items:center; flex-wrap:wrap; }
+  .crossed { position:relative; display:inline-block; }
+  .crossed::after { content:'\2715'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:var(--ink); }
+  .match-instr { margin-bottom:10px; }
+  .match-target { font-weight:bold; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>➕➖ Add &amp; Subtract within 20 — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Plain ‘a + b = ’ equations, sums within 20.">Add <input type="number" id="f-bareadd" min="0" max="40"></label>
+      <label data-tip="Plain ‘a − b = ’ equations within 20.">Subtract <input type="number" id="f-baresub" min="0" max="40"></label>
+      <label data-tip="‘a + b = ’ shown with two groups of objects.">Picture add <input type="number" id="f-picadd" min="0" max="30"></label>
+      <label data-tip="‘m − s = ’ shown with objects, some crossed out.">Picture subtract <input type="number" id="f-picsub" min="0" max="30"></label>
+      <label data-tip="Make-a-ten: group ten, then add (a + b that bridges 10).">Make a ten <input type="number" id="f-maketen" min="0" max="30"></label>
+      <label data-tip="Colour (tap) the expressions that equal a target (mix of + and −).">Match <input type="number" id="f-match" min="0" max="10"></label>
+      <label data-tip="Find the missing number, e.g. □ + 4 = 13 or 15 − □ = 12.">Missing number <input type="number" id="f-missing" min="0" max="30"></label>
+      <label data-tip="Word problems (add &amp; subtract) with a boxed equation.">Word problems <input type="number" id="f-word" min="0" max="30"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type digits or words; tap expressions to select. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Addition &amp; Subtraction within 20</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! &nbsp; <span style="font-size:9pt;">Pictures: Twemoji (Twitter, CC-BY 4.0)</span></div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  bareadd:WS.clamp(WS.toInt(WS.Q.get('bareadd'),5),0,40), baresub:WS.clamp(WS.toInt(WS.Q.get('baresub'),5),0,40),
+  picadd:WS.clamp(WS.toInt(WS.Q.get('picadd'),3),0,30), picsub:WS.clamp(WS.toInt(WS.Q.get('picsub'),3),0,30),
+  maketen:WS.clamp(WS.toInt(WS.Q.get('maketen'),2),0,30), match:WS.clamp(WS.toInt(WS.Q.get('match'),1),0,10),
+  missing:WS.clamp(WS.toInt(WS.Q.get('missing'),4),0,30), word:WS.clamp(WS.toInt(WS.Q.get('word'),4),0,30) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle } = WS.helpers(rng);
+
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const NOUNS=[
+  {cp:'1f34e',one:'apple',many:'apples'},{cp:'1f388',one:'balloon',many:'balloons'},{cp:'1f986',one:'duck',many:'ducks'},
+  {cp:'1f41f',one:'fish',many:'fish'},{cp:'1f36a',one:'cookie',many:'cookies'},{cp:'1f353',one:'strawberry',many:'strawberries'},
+  {cp:'1f41d',one:'bee',many:'bees'},{cp:'1f426',one:'bird',many:'birds'},{cp:'1f98b',one:'butterfly',many:'butterflies'},
+  {cp:'2b50',one:'star',many:'stars'},{cp:'270f',one:'pencil',many:'pencils'},{cp:'1f697',one:'car',many:'cars'},
+  {cp:'1f370',one:'cake',many:'cakes'},{cp:'26f5',one:'boat',many:'boats'},{cp:'1f3c0',one:'ball',many:'balls'},
+  {cp:'1f41a',one:'shell',many:'shells'},{cp:'1f6a9',one:'flag',many:'flags'},{cp:'1f430',one:'rabbit',many:'rabbits'},
+];
+const used=new Set();
+function pickNoun(){ const av=NOUNS.filter(n=>!used.has(n.cp)); const n=pick(av.length?av:NOUNS); used.add(n.cp); return n; }
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+const grp=(cp,n)=>{ let s=''; for(let i=0;i<n;i++) s+=img(cp); return '<span class="grp">'+s+'</span>'; };
+const crossedGrp=(cp,m,s)=>{ let out=''; for(let i=0;i<m;i++){ const x=i>=m-s; out+= x?'<span class="crossed">'+img(cp)+'</span>':img(cp); } return '<span class="grp">'+out+'</span>'; };
+const twoGroups=(cp,a,b)=>'<div class="pics">'+grp(cp,a)+'<span class="plus">+</span>'+grp(cp,b)+'</div>';
+
+let uid=0;
+const ansIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const wbl=a=>'<span class="field"><input class="ans wblank gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const boxIn=a=>'<span class="field"><input class="boxin gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const eqboxOp=(a,b,c,op)=>'<div class="eqbox">'+boxIn(a)+'<span class="op">'+op+'</span>'+boxIn(b)+'<span class="equals">=</span>'+boxIn(c)+'</div>';
+function selBlock(target,opts){ const id='m'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="item match-block" data-target="'+target+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+
+/* ---- number helpers ---- */
+function addAB(lo){ const sum=randInt(lo||10,20); const a=randInt(1,sum-1); return {a,b:sum-a,sum}; }
+function subAB(){ const m=randInt(11,20); const s=randInt(1,m-1); return {m,s,res:m-s}; }
+
+/* ---- generators ---- */
+function gBareAdd(i){ const {a,b,sum}=addAB(); return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span></div>'; }
+function gBareSub(i){ const {m,s,res}=subAB(); return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+m+' &minus; '+s+' = '+ansIn(res)+'</span></div>'; }
+function gPicAdd(i){ const {a,b,sum}=addAB(); const n=pickNoun();
+  return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+a+' + '+b+' = '+ansIn(sum)+'</span>'+twoGroups(n.cp,a,b)+'</div></div>'; }
+function gPicSub(i){ const {m,s,res}=subAB(); const n=pickNoun();
+  return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+m+' &minus; '+s+' = '+ansIn(res)+'</span><div class="pics">'+crossedGrp(n.cp,m,s)+'</div></div></div>'; }
+function gMakeTen(i){ // a + b that bridges ten
+  let a=randInt(6,9), b=randInt(2,9); while(a+b<=10||a+b>20){ a=randInt(6,9); b=randInt(2,9); }
+  const n=pickNoun();
+  return '<div class="item"><span class="label">'+i+'.</span> Group ten, then add.<div class="qwrap"><span class="eq">'+a+' + '+b+' = '+ansIn(a+b)+'</span>'+twoGroups(n.cp,a,b)+'</div></div>'; }
+function gMatch(i){ const target=randInt(10,18); const opts=[]; const seen=new Set();
+  function add(ok){ let tries=0; while(tries++<30){ let val= ok? target : randInt(8,20); if(!ok && val===target) continue;
+    let expr; if(rng()<0.5){ const a=randInt(Math.max(0,val-20),val); expr=a+' + '+(val-a); } else { const m=randInt(val+1,20); expr=m+' &minus; '+(m-val); }
+    if(seen.has(expr)) continue; seen.add(expr); opts.push({html:expr,ok}); return; } }
+  add(true); add(true); add(false); add(false); add(rng()<0.5);
+  return selBlock(target, shuffle(opts)).replace('<div class="chips">','<div class="match-instr"><span class="label">'+i+'.</span> Colour the ones that make <span class="match-target">'+target+'</span>.</div><div class="chips">'); }
+function gMissing(i){
+  let body;
+  if(rng()<0.5){ const {a,b,sum}=addAB(); body = rng()<0.5 ? (a+' + '+ansIn(b)+' = '+sum) : (ansIn(a)+' + '+b+' = '+sum); }
+  else { const {m,s,res}=subAB(); body = rng()<0.5 ? (m+' &minus; '+ansIn(s)+' = '+res) : (ansIn(m)+' &minus; '+s+' = '+res); }
+  return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+body+'</span></div>'; }
+function gWord(i){ const n=pickNoun();
+  if(rng()<0.5){ const {a,b,sum}=addAB(); // addition story
+    const l1='There are '+a+' '+n.many+'. '+b+' more '+(b===1?n.one:n.many)+' '+(b===1?'is':'are')+' added.';
+    return '<div class="item"><span class="label">'+i+'.</span> '+l1+'<div class="qwrap">'+eqboxOp(a,b,sum,'+')+twoGroups(n.cp,a,b)+'</div><div class="row">There are '+wbl(sum)+' '+n.many+' altogether.</div></div>'; }
+  else { const {m,s,res}=subAB(); // subtraction story
+    const l1='There are '+m+' '+n.many+'. '+s+' '+(s===1?n.one:n.many)+' '+(s===1?'is':'are')+' taken away.';
+    return '<div class="item"><span class="label">'+i+'.</span> '+l1+'<div class="qwrap">'+eqboxOp(m,s,res,'&minus;')+'<div class="pics">'+crossedGrp(n.cp,m,s)+'</div></div><div class="row">There are '+wbl(res)+' '+n.many+' left.</div></div>'; }
+}
+
+function section(t,c,fn,gridCss){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+(gridCss?'<div class="grid">'+b+'</div>':b); }
+let html='';
+html+=section('Complete the addition equations.', cfg.bareadd, gBareAdd, true);
+html+=section('Complete the subtraction equations.', cfg.baresub, gBareSub, true);
+html+=section('Add (with pictures).', cfg.picadd, gPicAdd);
+html+=section('Subtract (with pictures).', cfg.picsub, gPicSub);
+html+=section('Make a ten, then add.', cfg.maketen, gMakeTen);
+html+=section('Colour the ones that make the number.', cfg.match, gMatch);
+html+=section('Find the missing number.', cfg.missing, gMissing, true);
+html+=section('Solve the word problems.', cfg.word, gWord);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  add & subtract within 20';
+
+/* ---- wiring (shared engine; numeric + match blocks) ---- */
+WS.wireChips();
+WS.wirePanel(cfg, ['bareadd','baresub','picadd','picsub','maketen','match','missing','word'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>

@@ -22,6 +22,7 @@ const TARGETS = [
   { name: 'ordinals',    file: 'ordinals.html', params: 'seed=verify' },
   { name: 'numbers20',   file: 'numbers20.html', params: 'seed=verify' },
   { name: 'numbers10',   file: 'numbers10.html', params: 'seed=verify' },
+  { name: 'within20',    file: 'within20.html', params: 'seed=verify' },
 ];
 
 // Launch installed Chrome/Edge without downloading a browser.

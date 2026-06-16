@@ -18,6 +18,8 @@ for young children. No build step, no dependencies — emoji pictures are bundle
 - `numbers10.html` — the numbers-1-to-10 generator (Unit 1): count & write (number + word),
   match number↔word, colour exactly N objects, same-number groups, which-set-has-more/fewer,
   what-comes-next, and count-and-compare.
+- `within20.html` — add & subtract within 20 (Unit 7): bare & picture equations for both
+  operations, make-a-ten, colour-match, missing-number, and boxed word problems.
 - `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
   half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
   an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by
