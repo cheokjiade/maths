@@ -1,12 +1,22 @@
-# Maths — Subtraction Worksheet Generator
+# Maths — Worksheets
 
-A single self-contained static page (`index.html`) that generates printable subtraction
-worksheets for young children. No build step, no dependencies — emoji pictures are bundled
-locally in `assets/twemoji/` (Twemoji, CC-BY 4.0), so it works fully offline.
+A small collection of self-contained static pages that generate printable maths worksheets
+for young children. No build step, no dependencies — emoji pictures are bundled locally in
+`assets/twemoji/` (Twemoji, CC-BY 4.0), so everything works fully offline.
+
+- `index.html` — table of contents linking to each worksheet.
+- `subtraction.html` — the subtraction worksheet generator (details below).
+- `addition.html` — the addition worksheet generator (sums within 10): number bonds,
+  picture sums, "…make…" and missing-number questions, commutative pairs, word problems,
+  and an interactive colour-the-matching-sums exercise. Same seed/marking/print model.
+
+To add a topic later, drop a new page at the repo root (so it shares `assets/`) and add a
+card for it in `index.html`.
 
 ## Use it
 
-Open `index.html` in a browser, or host it on GitHub Pages and visit the URL.
+Open `index.html` in a browser (or host it on GitHub Pages) and pick a topic. For subtraction,
+open `subtraction.html` directly or follow the link from the contents page.
 
 - **Generate** a worksheet from a **seed** — the same seed always produces the same sheet,
   so you can re-print or share an exact worksheet via its link.
