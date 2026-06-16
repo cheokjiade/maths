@@ -16,12 +16,15 @@ window.WS = (function () {
   function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
   function makeRng(seed){ return mulberry32(xmur3(String(seed))()); }
   function helpers(rng){
-    return {
-      randInt:(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1)),
-      pick:a=>a[Math.floor(rng()*a.length)],
-      shuffle:a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; },
-      distinct:(k,lo,hi)=>{ const s=new Set(); let g=0; while(s.size<k && g++<500) s.add(lo+Math.floor(rng()*(hi-lo+1))); return [...s]; },
-    };
+    const randInt=(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1));
+    const pick=a=>a[Math.floor(rng()*a.length)];
+    const shuffle=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+    const distinct=(k,lo,hi)=>{ const s=new Set(); let g=0; while(s.size<k && g++<500) s.add(lo+Math.floor(rng()*(hi-lo+1))); return [...s]; };
+    // round-robin over a shuffled variant list, indexed by 1-based question number — guarantees every
+    // variant appears once a section's count reaches the number of variants (instead of an independent
+    // per-question coin-flip that can omit some). Returns i => variant.
+    const balanced=list=>{ const s=shuffle(list); return i=> s[(i-1) % s.length]; };
+    return { randInt, pick, shuffle, distinct, balanced };
   }
   /* short, child-friendly random seed (a 4–5 letter word) for fresh (no ?seed=) visits */
   const SEEDWORDS = ['bear','duck','fish','lion','bird','cake','moon','tree','ball','frog','star','swan','deer','goat','crab','seal','panda','tiger','zebra','koala','puppy','bunny','candy','robot','train','plane','smile','happy','jelly','mango','lemon','peach','grape','melon','daisy','cloud','snail','otter','whale','shark','sheep','horse','mouse','snake','apple','sunny','teddy','kitty','fairy','magic','pearl','coral','berry','honey','pizza','kite','leaf','rose','plum','pear','kiwi'];

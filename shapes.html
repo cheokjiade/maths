@@ -68,12 +68,13 @@
 "use strict";
 const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   name:WS.clamp(WS.toInt(WS.Q.get('name'),4),0,20), match:WS.clamp(WS.toInt(WS.Q.get('match'),2),0,20),
-  count:WS.clamp(WS.toInt(WS.Q.get('count'),1),0,10), group:WS.clamp(WS.toInt(WS.Q.get('group'),2),0,10),
+  count:WS.clamp(WS.toInt(WS.Q.get('count'),1),0,10), group:WS.clamp(WS.toInt(WS.Q.get('group'),3),0,10),
   compose:WS.clamp(WS.toInt(WS.Q.get('compose'),3),0,20), object:WS.clamp(WS.toInt(WS.Q.get('object'),3),0,20),
   grid:WS.clamp(WS.toInt(WS.Q.get('grid'),2),0,10), draw:WS.clamp(WS.toInt(WS.Q.get('draw'),2),0,12),
   part:WS.clamp(WS.toInt(WS.Q.get('part'),2),0,10) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle } = WS.helpers(rng);
+const { randInt, pick, shuffle, balanced } = WS.helpers(rng);
+const groupMode = balanced(['size','colour','shape']);  // spread size/colour/shape across the Group section
 
 /* ---------- shape SVG library ---------- */
 const SHAPES=['rectangle','square','circle','triangle','half circle','quarter circle'];
@@ -129,7 +130,7 @@ function gCount(i){
   return '<div class="item"><span class="label">'+i+'.</span> This picture is made of many shapes. Count them.<div class="qrow" style="align-items:flex-start;"><div>'+qs+'</div>'+box+'</div></div>';
 }
 function gGroup(i){
-  const mode=pick(['size','colour','shape']); const k=pick(SHAPES);
+  const mode=groupMode(i); const k=pick(SHAPES);
   function boxOf(variant){
     let s='<div class="pic-box" style="max-width:42%;">';
     for(let j=0;j<3;j++){

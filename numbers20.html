@@ -67,8 +67,10 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   pattern:WS.clamp(WS.toInt(WS.Q.get('pattern'),3),0,20), compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20),
   order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20), mf:WS.clamp(WS.toInt(WS.Q.get('mf'),3),0,20) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const NUMWORD = WS.NUMWORD;
+const wordsKind = balanced(['words','numerals']);   // spread in-words vs in-numerals
+const tensKind  = balanced(['make','plus']);        // spread "10 and N make" vs "10 + N ="
 
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
 const OBJS=[
@@ -93,10 +95,10 @@ function gCount(i){ const o=pickObj(); const N=randInt(11,20);
   return '<div class="item"><span class="label">'+i+'.</span> Count and write the number.<div class="qrow"><div class="pic-box">'+grp(o.cp,N)+'</div><div>There are '+ansIn(N,true)+' '+o.many+'.</div></div></div>'; }
 function gTens(i){ const ones=randInt(1,9); const N=10+ones; const o=pickObj();
   const pic='<div class="qrow"><div class="tenblock">'+grp(o.cp,10)+'</div><span style="font-size:20pt;">and</span><div class="pic-box" style="max-width:30%;">'+grp(o.cp,ones)+'</div></div>';
-  const eq= rng()<0.5 ? '10 and '+ones+' make '+ansIn(N,true) : '10 + '+ones+' = '+ansIn(N,true);
+  const eq= tensKind(i)==='make' ? '10 and '+ones+' make '+ansIn(N,true) : '10 + '+ones+' = '+ansIn(N,true);
   return '<div class="item"><span class="label">'+i+'.</span> Fill in the number.'+pic+'<div style="margin-top:6px;font-size:20pt;">'+eq+'</div></div>'; }
 function gWords(i){ const n=randInt(11,20);
-  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+ansIn(NUMWORD[n])+'</div>';
+  if(wordsKind(i)==='words') return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+ansIn(NUMWORD[n])+'</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+NUMWORD[n]+'&rdquo; in numerals. '+ansIn(n,true)+'</div>'; }
 function gMatch(i){ const nums=distinct(4,11,20); let rows='';
   nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:NUMWORD[x],ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock('one',opts)+'</div>'; });

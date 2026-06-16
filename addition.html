@@ -101,6 +101,8 @@ const MAXSUM=10;
 const rng=WS.makeRng(cfg.seed);
 const randInt=(lo,hi)=> lo+Math.floor(rng()*(hi-lo+1));
 const pickList=arr=>arr[Math.floor(rng()*arr.length)];
+const { balanced } = WS.helpers(rng);
+const wordVariant = balanced(['given','addmore','boxed','allblank']);  // spread the 4 layouts across the Word section
 
 /* ---------- assets / catalogue ---------- */
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
@@ -203,7 +205,7 @@ function qSubset(i){
 }
 
 function qWord(i){
-  const {a,b,sum}=pickABpos(); const n=pickNoun(); const variant=pickList(['given','addmore','boxed','allblank']);
+  const {a,b,sum}=pickABpos(); const n=pickNoun(); const variant=wordVariant(i);
   let lines, eq;
   if(variant==='given'){ lines='How many '+n.many+' are there altogether?'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }
   else if(variant==='addmore'){ lines='There are '+a+' '+n.many+'. Add '+b+' more '+(b===1?n.one:n.many)+'.'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }

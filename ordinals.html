@@ -58,7 +58,8 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   which:WS.clamp(WS.toInt(WS.Q.get('which'),3),0,20), position:WS.clamp(WS.toInt(WS.Q.get('position'),3),0,20),
   words:WS.clamp(WS.toInt(WS.Q.get('words'),4),0,20), picture:WS.clamp(WS.toInt(WS.Q.get('picture'),2),0,10) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle } = WS.helpers(rng);
+const { randInt, pick, shuffle, balanced } = WS.helpers(rng);
+const wordsKind = balanced(['words','numerals']);  // spread in-words vs in-numerals across the Words section
 
 const OWORD=['','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
 function ordSym(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
@@ -109,7 +110,7 @@ function gPosition(i){
 }
 function gWords(i){
   const n=randInt(1,10);
-  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+ordSym(n)+' in words. '+txtIn('ord',ordWord(n))+'</div>';
+  if(wordsKind(i)==='words') return '<div class="item"><span class="label">'+i+'.</span> Write '+ordSym(n)+' in words. '+txtIn('ord',ordWord(n))+'</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+ordWord(n)+'&rdquo; in numerals. '+txtIn('ord',ordSym(n),true)+'</div>';
 }
 function gPicture(i){

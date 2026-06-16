@@ -70,7 +70,10 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20), order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20),
   colourgrid:WS.clamp(WS.toInt(WS.Q.get('colourgrid'),1),0,10) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
+const wordsKind = balanced(['words','numerals']);    // spread in-words vs in-numerals
+const tensKind  = balanced(['compose','decompose']); // "7 tens 1 one = __" vs "24 = __ tens __ ones"
+const mlKind    = balanced(['1+','10+','1-','10-']);  // 1 more / 10 more / 1 less / 10 less
 
 /* ---- number words to 100 ---- */
 const ONES=['zero','one','two','three','four','five','six','seven','eight','nine'];
@@ -96,15 +99,15 @@ function gCount10(i){ const T=randInt(1,9), O=randInt(0,9), num=10*T+O;
   return '<div class="item"><span class="label">'+i+'.</span> Count the tens and ones.<div class="qrow">'+blocks(T,O)
     +'<div>There are '+numIn(T)+' tens and '+numIn(O)+' ones.<br>The number is '+numIn(num)+'.</div></div></div>'; }
 function gWords(i){ const n=randInt(11,99);
-  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+wordIn(numWord100(n))+'</div>';
+  if(wordsKind(i)==='words') return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+wordIn(numWord100(n))+'</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+numWord100(n)+'&rdquo; in numerals. '+numIn(n)+'</div>'; }
 function gMatch(i){ const nums=distinct(4,21,99); let rows='';
   nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:numWord100(x),ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock(opts)+'</div>'; });
   return '<div class="item"><span class="label">'+i+'.</span> Match each number to its word (tap the word).'+rows+'</div>'; }
 function gTensOnes(i){ const T=randInt(1,9), O=randInt(1,9), num=10*T+O;
-  if(rng()<0.5) return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:20pt;">'+T+' tens '+O+' '+(O===1?'one':'ones')+' = '+numIn(num)+'</span></div>';
+  if(tensKind(i)==='compose') return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:20pt;">'+T+' tens '+O+' '+(O===1?'one':'ones')+' = '+numIn(num)+'</span></div>';
   return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:20pt;">'+num+' = '+numIn(T)+' tens '+numIn(O)+' ones</span></div>'; }
-function gMoreLess(i){ const delta=pick([1,10]); const dir=pick(['more','less']);
+function gMoreLess(i){ const v=mlKind(i); const delta=v.startsWith('10')?10:1; const dir=v.endsWith('+')?'more':'less';
   let base, ans; if(dir==='more'){ base=randInt(1,100-delta); ans=base+delta; } else { base=randInt(delta+1,100); ans=base-delta; }
   return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:18pt;">'+delta+' '+dir+' than '+base+' is '+numIn(ans)+'.</span></div>'; }
 function gPattern(i){ const s=pick([1,2,5,10,-1,-2,-5,-10]); const len=5; let start;

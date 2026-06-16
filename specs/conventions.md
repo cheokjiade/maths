@@ -44,7 +44,17 @@ const { randInt, pick, shuffle, distinct } = WS.helpers(rng);   // rng-bound hel
 ```
 
 `WS.makeRng` is `mulberry32(xmur3(String(seed))())`; `WS.helpers(rng)` returns the inclusive
-`randInt`, `pick`, Fisher–Yates `shuffle`, and `distinct(k,lo,hi)` (k distinct ints).
+`randInt`, `pick`, Fisher–Yates `shuffle`, `distinct(k,lo,hi)` (k distinct ints), and
+`balanced(list)`.
+
+**`balanced(list)` — variant coverage.** Returns `i => variant`, a shuffled round-robin indexed by
+the 1-based question number, so a section's sub-variants are *spread* across it rather than chosen by
+an independent per-question coin-flip (which can omit some for a given seed). Use it whenever a section
+renders visually-distinct variants — addition's 4 word-problem layouts, shapes' size/colour/shape
+grouping, write-in-words vs write-in-numerals, the tens-and-ones phrasings, numbers100's more/less.
+Every variant appears once the section's count reaches the number of variants, so set that section's
+default count `≥` the variant count (e.g. shapes `group` defaults to 3). The graphs style spread and
+within20's add/subtract balance are the same idea.
 
 > **Gotcha:** the RNG is consumed in a fixed order, so *inserting a new `rng()` call anywhere shifts
 > every later draw* — the same seed then renders a different sheet. Acceptable (seeds aren't promised
