@@ -229,6 +229,9 @@ function pickAB(minTotal){
   if(cfg.zero) a=randInt(0,total); else a=randInt(1,total-1);
   return {a:a, b:total-a, sum:total};
 }
+// both addends >= 1 — used for pictured/story problems so we never show an
+// empty object group or phrasing like "0 black circles" / "There are 0 pencils".
+function pickABpos(){ const total=randInt(2,MAXSUM); const a=randInt(1,total-1); return {a:a, b:total-a, sum:total}; }
 function pickABdistinct(){
   for(let i=0;i<12;i++){ const t=randInt(2,MAXSUM); const a=randInt(1,t-1); const b=t-a; if(a!==b) return {a,b,sum:t}; }
   const t=randInt(2,MAXSUM); const a=randInt(1,t-1); return {a,b:t-a,sum:t};
@@ -258,12 +261,12 @@ function qBond(i){
 }
 
 function qPic(i){
-  const {a,b,sum}=pickAB(); const n=pickNoun();
+  const {a,b,sum}=pickABpos(); const n=pickNoun();
   return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+a+' + '+b+' = '+ansIn(sum)+'</span>'+twoGroups(n.cp,a,b)+'</div></div>';
 }
 
 function qSubset(i){
-  const {a,b,sum}=pickAB(); const kind=pickList(Object.keys(SHAPES)); const many=SHAPES[kind].many;
+  const {a,b,sum}=pickABpos(); const kind=pickList(Object.keys(SHAPES)); const many=SHAPES[kind].many;
   let row='<div class="shape-row">'; for(let k=0;k<a;k++) row+=shapeSVG(kind,true); for(let k=0;k<b;k++) row+=shapeSVG(kind,false); row+='</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Fill in the blanks.'
     +'<div class="qwrap"><div>'
@@ -274,7 +277,7 @@ function qSubset(i){
 }
 
 function qWord(i){
-  const {a,b,sum}=pickAB(); const n=pickNoun(); const variant=pickList(['given','addmore','boxed','allblank']);
+  const {a,b,sum}=pickABpos(); const n=pickNoun(); const variant=pickList(['given','addmore','boxed','allblank']);
   let lines, eq;
   if(variant==='given'){ lines='How many '+n.many+' are there altogether?'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }
   else if(variant==='addmore'){ lines='There are '+a+' '+n.many+'. Add '+b+' more '+(b===1?n.one:n.many)+'.'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }
@@ -296,7 +299,7 @@ function qCommute(i){
 }
 
 function qMissing(i){
-  const {a,b,sum}=pickAB(); const n=pickNoun();
+  const {a,b,sum}=pickABpos(); const n=pickNoun();
   return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+ansIn(a)+' + '+ansIn(b)+' = '+sum+'</span>'+twoGroups(n.cp,a,b)+'</div></div>';
 }
 
