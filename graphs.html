@@ -44,7 +44,8 @@
     <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
     <div class="fields">
       <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
-      <label data-tip="Read a picture graph and answer questions (count, more/fewer, total, most/least).">Read graphs <input type="number" id="f-read" min="0" max="10"></label>
+      <label data-tip="Read a PICTURE graph (each category has its own picture) and answer questions.">Picture graph <input type="number" id="f-readobj" min="0" max="10"></label>
+      <label data-tip="Read a SYMBOL graph (one shape stands for 1 item) and answer questions.">Symbol graph <input type="number" id="f-readsym" min="0" max="10"></label>
       <label data-tip="Count the objects in each tray, then shade the graph to match.">Build a graph <input type="number" id="f-build" min="0" max="10"></label>
     </div>
     <div class="btns">
@@ -68,9 +69,10 @@
 <script>
 "use strict";
 const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
-  read:WS.clamp(WS.toInt(WS.Q.get('read'),3),0,10), build:WS.clamp(WS.toInt(WS.Q.get('build'),1),0,10) };
+  readobj:WS.clamp(WS.toInt(WS.Q.get('readobj'),2),0,10), readsym:WS.clamp(WS.toInt(WS.Q.get('readsym'),2),0,10),
+  build:WS.clamp(WS.toInt(WS.Q.get('build'),1),0,10) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
 const NOUNS=[
@@ -107,9 +109,11 @@ const THEMES=[
   { style:'symbol', symbol:'square', mode:'owner', item:{s:'stamp',p:'stamps'}, cats:[
     {label:'Tom'},{label:'Sue'},{label:'Kim'},{label:'Dan'},{label:'Eva'},{label:'Ravi'}] },
 ];
-// three distinct graph styles; spread them across the worksheet so each kind reliably appears
-function groupOf(t){ return t.style==='object' ? 'object' : (t.mode==='count' ? 'sym-items' : 'sym-owner'); }
-const styleOrder = shuffle(['object','sym-items','sym-owner']);
+// split the two visually-distinct kinds into their own sections: object graphs first, generic-symbol last
+const objThemes = THEMES.filter(t=>t.style==='object');
+const symThemes = THEMES.filter(t=>t.style==='symbol');
+const objPick = balanced(objThemes);
+const symPick = balanced(symThemes);
 function symbolSVG(kind){ const f='fill="#3a4a5a" stroke="#222" stroke-width="0.5"'; let inner;
   if(kind==='triangle') inner='<polygon points="11,2 20,19 2,19" '+f+'/>';
   else if(kind==='star') inner='<polygon points="11,1.5 13.5,8.2 20.5,8.5 15,12.9 16.9,19.5 11,15.5 5.1,19.5 7,12.9 1.5,8.5 8.5,8.2" '+f+'/>';
@@ -120,8 +124,7 @@ function renderGraphH(cats, cellFn){ let rows=''; cats.forEach(c=>{ let cells=''
 function renderGraphV(cats, cellFn){ let cols=''; cats.forEach(c=>{ let cells=''; for(let z=0;z<c.count;z++) cells+='<div class="vcell">'+cellFn(c)+'</div>'; cols+='<div class="vcol"><div class="vstack">'+cells+'</div><div class="vlabel">'+c.label+'</div></div>'; }); return '<div class="vgraph">'+cols+'</div>'; }
 
 /* ---- read a picture graph ---- */
-function gRead(i){
-  const style=styleOrder[(i-1)%styleOrder.length]; const th=pick(THEMES.filter(t=>groupOf(t)===style));
+function renderRead(i, th){
   const k=pick([3,4]); const counts=distinct(k,2,8);
   const cats=shuffle(th.cats).slice(0,k).map((c,j)=>Object.assign({},c,{count:counts[j]}));
   const cellFn = th.style==='symbol' ? (function(){ return symbolSVG(th.symbol); }) : (function(c){ return img(c.cp); });
@@ -148,6 +151,8 @@ function gRead(i){
   else { qs+='<div class="subq">There are the most '+mostBlk+'.</div>'; qs+='<div class="subq">There are the fewest '+fewBlk+'.</div>'; }
   return '<div class="item"><span class="label">'+i+'.</span> Read the graph, then fill in the blanks (tap a word for the most/fewest).'+graph+key+qs+'</div>';
 }
+function gReadObject(i){ return renderRead(i, objPick(i)); }
+function gReadSymbol(i){ return renderRead(i, symPick(i)); }
 
 /* ---- build a graph (shade cells) ---- */
 function gBuild(i){
@@ -163,7 +168,8 @@ function gBuild(i){
 
 function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
 let html='';
-html+=section('Read the picture graphs.', cfg.read, gRead);
+html+=section('Read the picture graph (each kind has its own picture).', cfg.readobj, gReadObject);
+html+=section('Read the symbol graph (each shape stands for 1).', cfg.readsym, gReadSymbol);
 html+=section('Complete the graphs.', cfg.build, gBuild);
 document.getElementById('sheet').innerHTML=html;
 document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  picture graphs';
@@ -188,7 +194,7 @@ function buildClear(){ document.querySelectorAll('.bg-cells .cell').forEach(c=>c
 
 /* ---- wiring (shared engine) ---- */
 WS.wireChips();
-WS.wirePanel(cfg, ['read','build'], { mark: () => WS.mark({ extras: [buildExtra] }), clear: () => WS.clearAll(buildClear) });
+WS.wirePanel(cfg, ['readobj','readsym','build'], { mark: () => WS.mark({ extras: [buildExtra] }), clear: () => WS.clearAll(buildClear) });
 </script>
 </body>
 </html>
