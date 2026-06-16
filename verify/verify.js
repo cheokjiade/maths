@@ -23,7 +23,7 @@ const TARGETS = [
   { name: 'numbers20',   file: 'numbers20.html', params: 'seed=verify' },
   { name: 'numbers10',   file: 'numbers10.html', params: 'seed=verify' },
   { name: 'within20',    file: 'within20.html', params: 'seed=verify' },
-  { name: 'graphs',      file: 'graphs.html',   params: 'seed=verify&read=2&build=1' },
+  { name: 'graphs',      file: 'graphs.html',   params: 'seed=verify&read=3&build=1' },
   { name: 'numbers100',  file: 'numbers100.html', params: 'seed=verify' },
 ];
 

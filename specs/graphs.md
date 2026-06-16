@@ -32,6 +32,12 @@ interaction.
   **names/labels**. Two phrasings: *count* (fruit names → "There are N mangoes") and *owner*
   (children's names → "John has N stickers"). Adds a key: **"Each ▲ stands for 1 fruit."**
 
+The three styles (object / generic-shape-items / generic-shape-owner) are **spread across the
+worksheet** via `styleOrder[(i-1)%3]` (a shuffled round-robin), not picked independently per graph —
+so a worksheet with `read ≥ 3` (the default) reliably shows all three rather than, by chance,
+repeating one. This is the same "balance variants across the section" pattern as `within20`'s
+add/subtract word problems.
+
 **Read sub-questions** (all derived from the category counts): *count of category 1*, *more A than B*,
 *fewer B than A*, *total altogether* (numeric); *the most* and *the fewest* (tap a category word).
 Counts are `WS.helpers.distinct(k, 2, 8)` so they're all different — the max and min are unique (no
@@ -46,7 +52,7 @@ URL params, all clamped (seed defaults to `WS.randomSeed()`):
 | Param | Section | Default | Range |
 |-------|---------|---------|-------|
 | `seed` | RNG seed | random | any string |
-| `read` | Read-the-graph blocks | 2 | 0–10 |
+| `read` | Read-the-graph blocks | 3 | 0–10 |
 | `build` | Build-the-graph blocks | 1 | 0–10 |
 
 ---

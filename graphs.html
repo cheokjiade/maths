@@ -68,7 +68,7 @@
 <script>
 "use strict";
 const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
-  read:WS.clamp(WS.toInt(WS.Q.get('read'),2),0,10), build:WS.clamp(WS.toInt(WS.Q.get('build'),1),0,10) };
+  read:WS.clamp(WS.toInt(WS.Q.get('read'),3),0,10), build:WS.clamp(WS.toInt(WS.Q.get('build'),1),0,10) };
 const rng=WS.makeRng(cfg.seed);
 const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
 
@@ -107,6 +107,9 @@ const THEMES=[
   { style:'symbol', symbol:'square', mode:'owner', item:{s:'stamp',p:'stamps'}, cats:[
     {label:'Tom'},{label:'Sue'},{label:'Kim'},{label:'Dan'},{label:'Eva'},{label:'Ravi'}] },
 ];
+// three distinct graph styles; spread them across the worksheet so each kind reliably appears
+function groupOf(t){ return t.style==='object' ? 'object' : (t.mode==='count' ? 'sym-items' : 'sym-owner'); }
+const styleOrder = shuffle(['object','sym-items','sym-owner']);
 function symbolSVG(kind){ const f='fill="#3a4a5a" stroke="#222" stroke-width="0.5"'; let inner;
   if(kind==='triangle') inner='<polygon points="11,2 20,19 2,19" '+f+'/>';
   else if(kind==='star') inner='<polygon points="11,1.5 13.5,8.2 20.5,8.5 15,12.9 16.9,19.5 11,15.5 5.1,19.5 7,12.9 1.5,8.5 8.5,8.2" '+f+'/>';
@@ -118,7 +121,8 @@ function renderGraphV(cats, cellFn){ let cols=''; cats.forEach(c=>{ let cells=''
 
 /* ---- read a picture graph ---- */
 function gRead(i){
-  const th=pick(THEMES); const k=pick([3,4]); const counts=distinct(k,2,8);
+  const style=styleOrder[(i-1)%styleOrder.length]; const th=pick(THEMES.filter(t=>groupOf(t)===style));
+  const k=pick([3,4]); const counts=distinct(k,2,8);
   const cats=shuffle(th.cats).slice(0,k).map((c,j)=>Object.assign({},c,{count:counts[j]}));
   const cellFn = th.style==='symbol' ? (function(){ return symbolSVG(th.symbol); }) : (function(c){ return img(c.cp); });
   const graph = (rng()<0.5 ? renderGraphV : renderGraphH)(cats, cellFn);
