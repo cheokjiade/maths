@@ -121,8 +121,11 @@ function gMissing(i){
   if(rng()<0.5){ const {a,b,sum}=addAB(); body = rng()<0.5 ? (a+' + '+ansIn(b)+' = '+sum) : (ansIn(a)+' + '+b+' = '+sum); }
   else { const {m,s,res}=subAB(); body = rng()<0.5 ? (m+' &minus; '+ansIn(s)+' = '+res) : (ansIn(m)+' &minus; '+s+' = '+res); }
   return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+body+'</span></div>'; }
+// balanced ~half add / half sub across the word-problem section (shuffled), so a seed
+// never yields all-addition or all-subtraction word problems.
+const wordTypes = shuffle(Array.from({length:cfg.word}, (_,k)=> k%2===0 ? 'add' : 'sub'));
 function gWord(i){ const n=pickNoun();
-  if(rng()<0.5){ const {a,b,sum}=addAB(); // addition story
+  if(wordTypes[i-1]==='add'){ const {a,b,sum}=addAB(); // addition story
     const l1='There are '+a+' '+n.many+'. '+b+' more '+(b===1?n.one:n.many)+' '+(b===1?'is':'are')+' added.';
     return '<div class="item"><span class="label">'+i+'.</span> '+l1+'<div class="qwrap">'+eqboxOp(a,b,sum,'+')+twoGroups(n.cp,a,b)+'</div><div class="row">There are '+wbl(sum)+' '+n.many+' altogether.</div></div>'; }
   else { const {m,s,res}=subAB(); // subtraction story
