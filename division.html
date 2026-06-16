@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Division Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* division-specific components */
+  .qwrap { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .qtext { flex:1 1 auto; min-width:200px; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  input.wblank { width:90px; }
+  .obj { width:30px; height:30px; vertical-align:middle; margin:0 1px; }
+  .pics { display:flex; flex-wrap:wrap; align-items:center; gap:4px; max-width:46%; justify-content:flex-end; }
+  .grp { display:inline-flex; align-items:center; flex-wrap:wrap; }
+  .qmark { margin-top:6px; font-size:13pt; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>➗ Division Worksheet — options <span style="font-weight:normal;font-size:10pt;color:#666;">(share &amp; group, numbers to 20)</span></summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Equal sharing: split the objects into equal groups, then count how many are in each group.">Share equally <input type="number" id="f-share" min="0" max="20"></label>
+      <label data-tip="Grouping: put the objects into groups of a given size, then count how many groups there are.">Make groups <input type="number" id="f-group" min="0" max="20"></label>
+      <label data-tip="Sharing word problem: share the objects equally among some friends and find how many each one gets.">Share (words) <input type="number" id="f-shareword" min="0" max="20"></label>
+      <label data-tip="Grouping word problem: pack the objects into containers that each hold a fixed number, and find how many containers are needed.">Group (words) <input type="number" id="f-groupword" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type digits or words. Same seed + settings always makes the same worksheet (e.g. <code>?seed=janelle&amp;share=6</code>).
+      Press <b>Submit &amp; Mark</b>, or <b>Print</b> and do it on paper.</div>
+  </div>
+</details>
+
+<div class="score" id="score"></div>
+
+<h1>Division</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+
+<div id="sheet"></div>
+
+<div class="footer">Great job! &nbsp; <span style="font-size:9pt;">Pictures: Twemoji (Twitter, CC-BY 4.0)</span></div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+
+/* ---------- config (read from URL, clamped) ---------- */
+const cfg={
+  seed: WS.Q.get('seed')||WS.randomSeed(),
+  share:     WS.clamp(WS.toInt(WS.Q.get('share'),     4), 0, 20),
+  group:     WS.clamp(WS.toInt(WS.Q.get('group'),     4), 0, 20),
+  shareword: WS.clamp(WS.toInt(WS.Q.get('shareword'), 4), 0, 20),
+  groupword: WS.clamp(WS.toInt(WS.Q.get('groupword'), 4), 0, 20),
+};
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle } = WS.helpers(rng);
+
+/* ---------- assets / catalogue ---------- */
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+// Only codepoints that exist under assets/twemoji/ are used (verified by Glob).
+const NOUNS=[
+  {cp:'1f34e',one:'apple',many:'apples'},
+  {cp:'1f388',one:'balloon',many:'balloons'},
+  {cp:'1f36a',one:'cookie',many:'cookies'},
+  {cp:'1f353',one:'strawberry',many:'strawberries'},
+  {cp:'2b50',one:'star',many:'stars'},
+  {cp:'1f41f',one:'fish',many:'fish'},
+  {cp:'1f426',one:'bird',many:'birds'},
+  {cp:'1f337',one:'flower',many:'flowers'},
+  {cp:'1f41a',one:'shell',many:'shells'},
+  {cp:'1f34a',one:'orange',many:'oranges'},
+  {cp:'1f36c',one:'sweet',many:'sweets'},
+  {cp:'1f95a',one:'egg',many:'eggs'},
+  {cp:'1f9c1',one:'cupcake',many:'cupcakes'},
+  {cp:'1f370',one:'cake',many:'cakes'},
+  {cp:'1f98b',one:'butterfly',many:'butterflies'},
+  {cp:'270f',one:'pencil',many:'pencils'},
+  {cp:'1f343',one:'leaf',many:'leaves'},
+  {cp:'1f986',one:'duck',many:'ducks'},
+];
+const used=new Set();
+function pickNoun(){ const av=NOUNS.filter(n=>!used.has(n.cp)); const arr=av.length?av:NOUNS; const n=pick(arr); used.add(n.cp); return n; }
+// recipient words for the sharing word problem (people/recipients who each get a share)
+const RECIPIENTS=[
+  {one:'friend',many:'friends'},
+  {one:'child',many:'children'},
+  {one:'plate',many:'plates'},
+  {one:'basket',many:'baskets'},
+  {one:'box',many:'boxes'},
+  {one:'bag',many:'bags'},
+];
+// container words for the grouping word problem (each holds a fixed number)
+const CONTAINERS=[
+  {one:'box',many:'boxes'},
+  {one:'basket',many:'baskets'},
+  {one:'bag',many:'bags'},
+  {one:'plate',many:'plates'},
+  {one:'jar',many:'jars'},
+  {one:'tray',many:'trays'},
+];
+
+/* ---------- input + picture factories ---------- */
+const ansIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const wbl  =a=>'<span class="field"><input class="ans wblank gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+const grp=(cp,n)=>{ let s=''; for(let i=0;i<n;i++) s+=img(cp); return '<span class="grp">'+s+'</span>'; };
+const pics=(cp,n)=>'<div class="pics">'+grp(cp,n)+'</div>';
+
+/* ---------- problem maker ----------
+   Pick a whole-number quotient q in 2..9 and a divisor G from {2,3,4,5,6,10},
+   then N = q*G with N <= 20. The answer is ALWAYS N/G == q (exact). */
+const DIVISORS=[2,3,4,5,6,10];
+function makeNG(){
+  // valid (q,G) pairs: q in 2..9, G in DIVISORS, N=q*G <= 20
+  const opts=[];
+  for(const G of DIVISORS) for(let q=2;q<=9;q++){ const N=q*G; if(N<=20) opts.push({N,G,q}); }
+  return pick(opts);
+}
+// re-roll past already-used (N,G) keys so a section never repeats a question (falls back after 40 tries)
+function distinctBy(pick, keyOf){ const used=new Set(); return ()=>{ let v; for(let g=0;g<40;g++){ v=pick(); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; }; }
+const keyNG=p=>p.N+'|'+p.G;
+
+const sharePick     = distinctBy(makeNG, keyNG);
+const groupPick     = distinctBy(makeNG, keyNG);
+const sharewordPick = distinctBy(makeNG, keyNG);
+const groupwordPick = distinctBy(makeNG, keyNG);
+
+/* ---------- generators -> HTML ----------
+   Every typed answer's data-answer == N/G == q (exact whole number). */
+
+// 1. Equal sharing -> how many in each group (answer q)
+function gShare(i){
+  const {N,G,q}=sharePick(); const n=pickNoun();
+  return '<div class="item"><div class="qwrap"><div class="qtext"><span class="label">'+i+'.</span> '
+    +'Here are '+N+' '+n.many+'. Arrange the '+N+' '+n.many+' into '+G+' equal groups.'
+    +'<div class="qmark">There are '+ansIn(q)+' '+n.many+' in each group.</div></div>'
+    +pics(n.cp,N)+'</div></div>';
+}
+
+// 2. Grouping -> how many groups (answer q)
+function gGroup(i){
+  const {N,G,q}=groupPick(); const n=pickNoun();
+  return '<div class="item"><div class="qwrap"><div class="qtext"><span class="label">'+i+'.</span> '
+    +'There are '+N+' '+n.many+'. Put them into groups of '+G+'.'
+    +'<div class="qmark">There are '+ansIn(q)+' groups.</div></div>'
+    +pics(n.cp,N)+'</div></div>';
+}
+
+// 3. Sharing word problem -> how many each recipient gets (answer q)
+function gShareWord(i){
+  const {N,G,q}=sharewordPick(); const n=pickNoun(); const r=pick(RECIPIENTS);
+  return '<div class="item"><div class="qwrap"><div class="qtext"><span class="label">'+i+'.</span> '
+    +'Share '+N+' '+n.many+' equally among '+G+' '+r.many+'.'
+    +'<div class="qmark">Each '+r.one+' gets '+ansIn(q)+' '+n.many+'.</div></div>'
+    +pics(n.cp,N)+'</div></div>';
+}
+
+// 4. Grouping word problem -> how many containers are needed (answer q)
+function gGroupWord(i){
+  const {N,G,q}=groupwordPick(); const n=pickNoun(); const c=pick(CONTAINERS);
+  return '<div class="item"><div class="qwrap"><div class="qtext"><span class="label">'+i+'.</span> '
+    +'There are '+N+' '+n.many+'. Each '+c.one+' holds '+G+'.'
+    +'<div class="qmark">How many '+c.many+' are needed? '+ansIn(q)+'</div></div>'
+    +pics(n.cp,N)+'</div></div>';
+}
+
+/* ---------- assemble sheet ---------- */
+function section(title, count, fn){
+  if(count<=0) return '';
+  let body=''; for(let i=0;i<count;i++) body+=fn(i+1);
+  return '<h2>'+title+'</h2>'+body;
+}
+let html='';
+html+=section('Share equally. How many in each group?', cfg.share,     gShare);
+html+=section('Make equal groups. How many groups?',     cfg.group,     gGroup);
+html+=section('Sharing word problems.',                   cfg.shareword, gShareWord);
+html+=section('Grouping word problems.',                  cfg.groupword, gGroupWord);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  division: equal sharing & grouping, numbers to 20';
+
+/* ---------- wiring (shared engine; numeric inputs) ---------- */
+WS.wireChips();
+WS.wirePanel(cfg, ['share','group','shareword','groupword'],
+  { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>

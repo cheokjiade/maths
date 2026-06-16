@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiplication Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* multiplication-specific components */
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 40px; }
+  .grid .num, .row .num { font-weight:bold; margin-right:8px; }
+  .row { margin:8px 0; }
+  .qwrap { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .eq { font-size:22pt; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  input.wblank { width:90px; }
+  .lines { display:flex; flex-direction:column; gap:10px; }
+  .obj { width:26px; height:26px; vertical-align:middle; margin:0 1px; }
+  /* equal-groups: each box holds M identical icons; G boxes laid in a flowing row */
+  .groups { display:flex; flex-wrap:wrap; align-items:center; gap:12px; max-width:55%; justify-content:flex-end; }
+  .gbox { border:2px solid var(--ink); border-radius:10px; padding:6px 8px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px; max-width:140px; }
+  .gbox .obj { width:24px; height:24px; }
+  /* array: R rows x C columns of one icon */
+  .array { display:inline-grid; gap:6px; border:2px solid var(--ink); border-radius:10px; padding:10px; }
+  .array .obj { width:26px; height:26px; }
+  .pic-side { display:flex; align-items:center; justify-content:flex-end; max-width:55%; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>✖️ Multiplication Worksheet — options <span style="font-weight:normal;font-size:10pt;color:#666;">(equal groups, products to 24)</span></summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Equal groups shown in boxes: write the repeated addition, the ‘groups of’, and the ‘×’ answer.">Equal groups <input type="number" id="f-groups" min="0" max="20"></label>
+      <label data-tip="Write the multiplication sentence (rows × columns) from an array of objects.">Write sentence <input type="number" id="f-write" min="0" max="20"></label>
+      <label data-tip="‘G × M = __’ beside a picture of G groups of M objects.">Multiply <input type="number" id="f-multiply" min="0" max="20"></label>
+      <label data-tip="Word problems: equal groups, fill in the ‘×’ sentence and the total.">Word problems <input type="number" id="f-word" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Multiplication as equal groups / repeated addition. Same seed + settings = same worksheet (e.g. <code>?seed=janelle&amp;groups=6</code>). Type answers and press <b>Submit &amp; Mark</b>, or <b>Print</b>.</div>
+  </div>
+</details>
+
+<div class="score" id="score"></div>
+
+<h1>Multiplication</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+
+<div id="sheet"></div>
+
+<div class="footer">Great job! &nbsp; <span style="font-size:9pt;">Pictures: Twemoji (Twitter, CC-BY 4.0)</span></div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+
+/* ---------- config ---------- */
+const cfg={
+  seed: WS.Q.get('seed')||WS.randomSeed(),
+  groups:   WS.clamp(WS.toInt(WS.Q.get('groups'),4),0,20),
+  write:    WS.clamp(WS.toInt(WS.Q.get('write'),4),0,20),
+  multiply: WS.clamp(WS.toInt(WS.Q.get('multiply'),4),0,20),
+  word:     WS.clamp(WS.toInt(WS.Q.get('word'),4),0,20),
+};
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle } = WS.helpers(rng);
+
+/* ---------- assets / catalogue ---------- */
+// Only LOCAL bundled Twemoji codepoints that exist under assets/twemoji/ — clearly
+// countable, visually-distinct objects for equal-group / array pictures.
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const NOUNS=[
+  {cp:'1f34e',one:'apple',many:'apples',box:'basket',boxes:'baskets'},
+  {cp:'1f388',one:'balloon',many:'balloons',box:'bunch',boxes:'bunches'},
+  {cp:'1f41f',one:'fish',many:'fish',box:'tank',boxes:'tanks'},
+  {cp:'2b50',one:'star',many:'stars',box:'box',boxes:'boxes'},
+  {cp:'1f36a',one:'cookie',many:'cookies',box:'jar',boxes:'jars'},
+  {cp:'1f353',one:'strawberry',many:'strawberries',box:'bowl',boxes:'bowls'},
+  {cp:'1f337',one:'flower',many:'flowers',box:'vase',boxes:'vases'},
+  {cp:'1f426',one:'bird',many:'birds',box:'cage',boxes:'cages'},
+  {cp:'1f3c0',one:'ball',many:'balls',box:'bag',boxes:'bags'},
+  {cp:'1f41a',one:'shell',many:'shells',box:'pail',boxes:'pails'},
+  {cp:'1f6a9',one:'flag',many:'flags',box:'row',boxes:'rows'},
+  {cp:'1f370',one:'cake',many:'cakes',box:'tray',boxes:'trays'},
+  {cp:'1f430',one:'rabbit',many:'rabbits',box:'hutch',boxes:'hutches'},
+  {cp:'1f431',one:'cat',many:'cats',box:'basket',boxes:'baskets'},
+  {cp:'1f986',one:'duck',many:'ducks',box:'pond',boxes:'ponds'},
+  {cp:'1f9c1',one:'cupcake',many:'cupcakes',box:'box',boxes:'boxes'},
+];
+const used=new Set();
+function pickNoun(){ const av=NOUNS.filter(n=>!used.has(n.cp)); const arr=av.length?av:NOUNS; const n=pick(arr); used.add(n.cp); return n; }
+
+/* ---------- input factories ---------- */
+const gin=(cls,ans)=>'<span class="field"><input class="'+cls+' gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const ansIn=a=>gin('ans',a);
+const wbl=a=>gin('wblank',a);
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+// G boxes, each with M identical icons
+function groupBoxes(cp,g,m){ let s='<div class="groups">'; for(let i=0;i<g;i++){ let b='<div class="gbox">'; for(let k=0;k<m;k++) b+=img(cp); s+=b+'</div>'; } return s+'</div>'; }
+// R rows x C columns array of one icon
+function arrayPic(cp,r,c){ let cells=''; for(let k=0;k<r*c;k++) cells+=img(cp); return '<div class="pic-side"><div class="array" style="grid-template-columns:repeat('+c+',1fr);">'+cells+'</div></div>'; }
+
+/* ---------- distinct content (distinctBy copied from addition.html): re-roll past used keys ---------- */
+function distinctBy(pick, keyOf){ const used=new Set(); return ()=>{ let v; for(let g=0;g<40;g++){ v=pick(); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; }; }
+// All single-digit (2..5) factor pairs with product <= 24 (excludes 5x5=25). 15 pairs.
+const PAIRS=[]; for(let a=2;a<=5;a++) for(let b=2;b<=5;b++) if(a*b<=24) PAIRS.push({a,b,p:a*b});
+// Draw from a freshly-shuffled copy of the pool, indexed by call count: zero repeats until the
+// 15-pair space is exhausted (then it cycles). distinctBy still wraps it as the dedupe contract.
+function poolRoller(map){ const order=shuffle(PAIRS); let i=0; return ()=>{ const pr=order[i++ % order.length]; return map(pr); }; }
+const keyGM = v=>v.g+'x'+v.m;          // (groups,per) ordered — order matters for G×M
+const keyRC = v=>v.r+'x'+v.c;          // rows×columns ordered
+const groupsPick   = distinctBy(poolRoller(pr=>({g:pr.a, m:pr.b, p:pr.p})), keyGM);
+const writePick    = distinctBy(poolRoller(pr=>({r:pr.a, c:pr.b, p:pr.p})), keyRC);
+const multiplyPick = distinctBy(poolRoller(pr=>({g:pr.a, m:pr.b, p:pr.p})), keyGM);
+const wordPick     = distinctBy(poolRoller(pr=>({g:pr.a, m:pr.b, p:pr.p})), keyGM);
+
+/* ---------- per-type generators -> HTML ---------- */
+// 1. Equal-groups ladder: repeated addition, "G groups of M", and "G × M".
+function gGroups(i){
+  const {g,m,p}=groupsPick(); const n=pickNoun();
+  const repeated = Array(g).fill(m).join(' + ');
+  const lines='<div class="lines">'
+    +'<div class="eq">'+repeated+' = '+ansIn(p)+'</div>'
+    +'<div class="eq">'+g+' groups of '+m+' = '+ansIn(p)+'</div>'
+    +'<div class="eq">'+g+' &times; '+m+' = '+ansIn(p)+'</div>'
+    +'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> '+g+' groups of '+m+' '+(m===1?n.one:n.many)+'.'
+    +'<div class="qwrap">'+lines+groupBoxes(n.cp,g,m)+'</div></div>';
+}
+
+// 2. Write the multiplication sentence from an ARRAY: rows × columns = product.
+function gWrite(i){
+  const {r,c,p}=writePick(); const n=pickNoun();
+  return '<div class="item"><span class="label">'+i+'.</span> Write the multiplication sentence (rows &times; columns).'
+    +'<div class="qwrap"><div class="eq">'+ansIn(r)+' &times; '+ansIn(c)+' = '+ansIn(p)+'</div>'+arrayPic(n.cp,r,c)+'</div></div>';
+}
+
+// 3. G × M = __ beside a picture of G groups of M (single answer).
+function gMultiply(i){
+  const {g,m,p}=multiplyPick(); const n=pickNoun();
+  return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+g+' &times; '+m+' = '+ansIn(p)+'</span>'+groupBoxes(n.cp,g,m)+'</div></div>';
+}
+
+// 4. Word problem: G containers, M items each -> "G × M = __" then total.
+function gWord(i){
+  const {g,m,p}=wordPick(); const n=pickNoun();
+  const story='There are '+g+' '+n.boxes+'. There are '+m+' '+(m===1?n.one:n.many)+' in each '+n.box+'.';
+  // pre-print the × and = ; child types the two factors and the product, then the total
+  return '<div class="item"><span class="label">'+i+'.</span> '+story
+    +'<div class="qwrap"><span class="eq">'+ansIn(g)+' &times; '+ansIn(m)+' = '+ansIn(p)+'</span>'+groupBoxes(n.cp,g,m)+'</div>'
+    +'<div class="row">There are '+wbl(p)+' '+n.many+' altogether.</div></div>';
+}
+
+/* ---------- assemble sheet ---------- */
+function section(title, count, fn){
+  if(count<=0) return '';
+  let body=''; for(let i=0;i<count;i++) body+=fn(i+1);
+  return '<h2>'+title+'</h2>'+body;
+}
+let html='';
+html+=section('Equal groups — fill in the blanks.', cfg.groups, gGroups);
+html+=section('Write the multiplication sentence.', cfg.write, gWrite);
+html+=section('Multiply.', cfg.multiply, gMultiply);
+html+=section('Solve the word problems.', cfg.word, gWord);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  multiplication as equal groups (products to 24)';
+
+/* ---------- wiring (shared engine; numeric inputs) ---------- */
+WS.wireChips();
+WS.wirePanel(cfg, ['groups','write','multiply','word'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>

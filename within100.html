@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add &amp; Subtract within 100 Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* within-100-specific components */
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 40px; }
+  .grid .num, .row .num { font-weight:bold; margin-right:8px; }
+  .row { margin:8px 0; }
+  .qwrap { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .eq { font-size:22pt; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:64px; }
+  input.ans.wblank { width:90px; }
+  /* base-ten place-value blocks (rods + unit cubes), reused from numbers100 */
+  .pic-box { border:1.5px solid #888; border-radius:6px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:flex-end; max-width:55%; }
+  .ten { vertical-align:bottom; } .one { vertical-align:bottom; }
+  /* Tens | Ones column-arithmetic table */
+  .colsum { display:inline-block; }
+  .colsum table { border-collapse:collapse; font-size:24pt; font-family:inherit; }
+  .colsum caption { font-size:11pt; color:#666; font-family:Verdana,sans-serif; caption-side:top; margin-bottom:2px; }
+  .colsum th { font-size:11pt; color:#555; font-weight:bold; font-family:Verdana,sans-serif; border-bottom:1px solid #bbb; padding:2px 0; }
+  .colsum td { width:46px; height:46px; text-align:center; vertical-align:middle; padding:0; }
+  .colsum td.op { text-align:left; padding-left:4px; width:24px; color:var(--ink); }
+  .colsum tr.rule td { border-top:3px solid var(--ink); height:6px; }
+  .colsum td.cell { border-left:1px dashed #cdcdcd; }
+  .colsum td.cell:first-child { border-left:none; }
+  .colsum input.colin { width:42px; height:44px; border:2px solid var(--ink); box-sizing:border-box; text-align:center; font-size:22pt; font-family:inherit; background:transparent; color:var(--ink); }
+  .colwrap { display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap; }
+  .linked { display:flex; flex-direction:column; gap:6px; }
+  .linked .eq { font-size:20pt; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>➕➖ Add &amp; Subtract within 100 — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Base-ten blocks: a multiple of ten plus ones, e.g. 40 + 8 = __ (with ten-rods and unit cubes).">Place value <input type="number" id="f-place" min="0" max="20"></label>
+      <label data-tip="Column addition in a Tens | Ones table — two 2-digit numbers stacked, some need renaming (carry).">Column add <input type="number" id="f-coladd" min="0" max="20"></label>
+      <label data-tip="Column subtraction in a Tens | Ones table — some need renaming (borrow).">Column subtract <input type="number" id="f-colsub" min="0" max="20"></label>
+      <label data-tip="Horizontal ‘ab + cd = __’, 2-digit, sums to 99 (some need renaming).">Add <input type="number" id="f-add" min="0" max="30"></label>
+      <label data-tip="Horizontal ‘ab − cd = __’, 2-digit (some need renaming).">Subtract <input type="number" id="f-sub" min="0" max="30"></label>
+      <label data-tip="Add three single-digit numbers, e.g. a + b + c = __.">Add three <input type="number" id="f-three" min="0" max="20"></label>
+      <label data-tip="Tens facts: ‘X tens ± Y tens = __’ and ‘X0 ± Y0 = __’.">Tens <input type="number" id="f-tens" min="0" max="20"></label>
+      <label data-tip="One-step word problems (join, take-away, compare, part-whole) within 100.">Word problems <input type="number" id="f-word" min="0" max="30"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type the answers in the boxes and press <b>Submit &amp; Mark</b>, or <b>Print</b> and do it on paper. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Add &amp; Subtract within 100</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! ⭐</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+
+/* ---------- config ---------- */
+const cfg={
+  seed: WS.Q.get('seed')||WS.randomSeed(),
+  place:  WS.clamp(WS.toInt(WS.Q.get('place'),3),0,20),
+  coladd: WS.clamp(WS.toInt(WS.Q.get('coladd'),3),0,20),
+  colsub: WS.clamp(WS.toInt(WS.Q.get('colsub'),3),0,20),
+  add:    WS.clamp(WS.toInt(WS.Q.get('add'),4),0,30),
+  sub:    WS.clamp(WS.toInt(WS.Q.get('sub'),4),0,30),
+  three:  WS.clamp(WS.toInt(WS.Q.get('three'),3),0,20),
+  tens:   WS.clamp(WS.toInt(WS.Q.get('tens'),3),0,20),
+  word:   WS.clamp(WS.toInt(WS.Q.get('word'),4),0,30),
+};
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
+
+/* balanced variant spreads (1-based index by question number) */
+const coladdKind = balanced(['plain','rename']);
+const colsubKind = balanced(['plain','rename']);
+const addKind    = balanced(['plain','rename']);
+const subKind    = balanced(['plain','rename']);
+const tensKind   = balanced(['add','sub']);
+const wordKind   = balanced(['join','takeaway','compare','partwhole']);
+
+/* ---------- distinct-question guard (re-rolls past used keys; copied from addition.html) ---------- */
+function distinctBy(pickFn, keyOf){
+  const used=new Set();
+  return (...a)=>{ let v; for(let g=0;g<60;g++){ v=pickFn(...a); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; };
+}
+
+/* ---------- input factories ---------- */
+const ansIn = a => '<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const wbl   = a => '<span class="field"><input class="ans wblank gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const colIn = a => '<input class="colin gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off">';
+
+/* ---------- base-ten blocks (rods + unit cubes), reused from numbers100 ---------- */
+function tenRod(){ let s=''; for(let r=0;r<10;r++) s+='<rect x="1" y="'+(1+r*6)+'" width="12" height="6" fill="#cfe0f5" stroke="#345" stroke-width="0.5"/>'; return '<svg class="ten" width="16" height="64" viewBox="0 0 14 62">'+s+'</svg>'; }
+const oneSq=()=>'<svg class="one" width="13" height="13" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="#fde9cf" stroke="#345" stroke-width="0.6"/></svg>';
+function blocks(T,O){ let s='<div class="pic-box">'; for(let i=0;i<T;i++) s+=tenRod(); s+='<span style="display:inline-block;width:8px;"></span>'; for(let i=0;i<O;i++) s+=oneSq(); return s+'</div>'; }
+
+/* ---------- column (Tens | Ones) table layout ---------- */
+// Renders two 2-digit operands stacked over a rule with a single answer input below.
+// top = first operand, bot = second operand, op = '+' or '−', ans = correct total/difference.
+function colTable(top, bot, op, ans){
+  const td=(d,cls)=> '<td class="cell'+(cls?' '+cls:'')+'">'+d+'</td>';
+  const t10=Math.floor(top/10), t1=top%10, b10=Math.floor(bot/10), b1=bot%10;
+  const a10=Math.floor(ans/10), a1=ans%10; // ans is 2-digit (10..99) for these sections
+  return '<div class="colsum"><table>'
+    + '<tr><th></th><th>Tens</th><th>Ones</th></tr>'
+    + '<tr><td class="op"></td>'+td(t10)+td(t1)+'</tr>'
+    + '<tr><td class="op">'+op+'</td>'+td(b10)+td(b1)+'</tr>'
+    + '<tr class="rule"><td></td><td></td><td></td></tr>'
+    + '<tr><td class="op"></td>'+td(colIn(a10),'')+td(colIn(a1),'')+'</tr>'
+    + '</table></div>';
+}
+
+/* ====================================================================== */
+/* 1. PLACE VALUE — (tens*10) + ones, with base-ten blocks                */
+/* ====================================================================== */
+const placePick = distinctBy(
+  ()=>{ const T=randInt(2,9); const O=randInt(1,9); return {T,O,tens:T*10,ones:O,sum:T*10+O}; },
+  p=>p.T+'|'+p.O
+);
+function gPlace(i){
+  const {T,O,tens,ones,sum}=placePick();   // sum = tens + ones, tens=20..90, ones=1..9 -> 21..99
+  return '<div class="item"><div class="qwrap">'
+    + '<span class="eq"><span class="label">'+i+'.</span> '+tens+' + '+ones+' = '+ansIn(sum)+'</span>'
+    + blocks(T,O)
+    + '</div></div>';
+}
+
+/* ====================================================================== */
+/* 2. COLUMN ADDITION (Tens | Ones), balanced plain / rename             */
+/* ====================================================================== */
+// plain: ones-sum <= 9 (no carry); rename: ones-sum >= 11 (forces a carry). Total kept <= 99.
+function pickColAdd(kind){
+  for(let g=0;g<200;g++){
+    const a=randInt(11,88), b=randInt(11,88);
+    if(a+b>99) continue;
+    const ones=(a%10)+(b%10);
+    if(kind==='plain' && ones>9) continue;
+    if(kind==='rename' && ones<11) continue;   // need a genuine carry
+    return {a,b,sum:a+b};
+  }
+  // fallback that always satisfies the constraint
+  if(kind==='rename'){ return {a:27,b:38,sum:65}; }   // 7+8=15 -> carry
+  return {a:23,b:45,sum:68};                            // 3+5=8  -> no carry
+}
+const colAddPick = distinctBy((kind)=>{ const p=pickColAdd(kind); p.kind=kind; return p; }, p=>p.a+'+'+p.b);
+function gColAdd(i){
+  const {a,b,sum}=colAddPick(coladdKind(i));
+  return '<div class="item"><div class="colwrap">'+colTable(a,b,'+',sum)+'</div></div>';
+}
+
+/* ====================================================================== */
+/* 3. COLUMN SUBTRACTION (Tens | Ones), balanced plain / rename          */
+/* ====================================================================== */
+// plain: top-ones >= bot-ones (no borrow); rename: top-ones < bot-ones (borrow). Result positive, 2-digit.
+function pickColSub(kind){
+  for(let g=0;g<200;g++){
+    const a=randInt(21,99), b=randInt(11,a-1);   // a>b
+    const res=a-b;
+    if(res<10) continue;                          // keep result 2-digit so both answer boxes are used
+    const borrow=(a%10)<(b%10);
+    if(kind==='plain' && borrow) continue;
+    if(kind==='rename' && !borrow) continue;
+    return {a,b,res};
+  }
+  if(kind==='rename'){ return {a:62,b:28,res:34}; } // 2<8 -> borrow
+  return {a:68,b:25,res:43};                         // 8>=5 -> no borrow
+}
+const colSubPick = distinctBy((kind)=>{ const p=pickColSub(kind); p.kind=kind; return p; }, p=>p.a+'-'+p.b);
+function gColSub(i){
+  const {a,b,res}=colSubPick(colsubKind(i));
+  return '<div class="item"><div class="colwrap">'+colTable(a,b,'&minus;',res)+'</div></div>';
+}
+
+/* ====================================================================== */
+/* 4. HORIZONTAL ADD — ab + cd = __, balanced plain / rename             */
+/* ====================================================================== */
+const addPick = distinctBy((kind)=>{ const p=pickColAdd(kind); p.kind=kind; return p; }, p=>p.a+'+'+p.b);
+function gAdd(i){
+  const {a,b,sum}=addPick(addKind(i));
+  return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span></div>';
+}
+
+/* ====================================================================== */
+/* 5. HORIZONTAL SUB — ab − cd = __, balanced plain / rename             */
+/* ====================================================================== */
+// result >= 0 (allow single-digit results here, unlike the column version).
+function pickHSub(kind){
+  for(let g=0;g<200;g++){
+    const a=randInt(21,99), b=randInt(2,a-1);
+    const borrow=(a%10)<(b%10);
+    if(kind==='plain' && borrow) continue;
+    if(kind==='rename' && !borrow) continue;
+    return {a,b,res:a-b};
+  }
+  if(kind==='rename'){ return {a:53,b:27,res:26}; }
+  return {a:57,b:23,res:34};
+}
+const subPick = distinctBy((kind)=>{ const p=pickHSub(kind); p.kind=kind; return p; }, p=>p.a+'-'+p.b);
+function gSub(i){
+  const {a,b,res}=subPick(subKind(i));
+  return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+a+' &minus; '+b+' = '+ansIn(res)+'</span></div>';
+}
+
+/* ====================================================================== */
+/* 6. ADD THREE single digits (each 2..9), sum <= 24                     */
+/* ====================================================================== */
+const threePick = distinctBy(
+  ()=>{ let a,b,c; do{ a=randInt(2,9); b=randInt(2,9); c=randInt(2,9); } while(a+b+c>24); return {a,b,c,sum:a+b+c}; },
+  p=>[p.a,p.b,p.c].slice().sort((x,y)=>x-y).join(',')   // unordered key: treat 2+3+9 same as 9+3+2
+);
+function gThree(i){
+  const {a,b,c,sum}=threePick();
+  return '<div class="row"><span class="num">'+i+'.</span> <span class="eq">'+a+' + '+b+' + '+c+' = '+ansIn(sum)+'</span></div>';
+}
+
+/* ====================================================================== */
+/* 7. TENS — "X tens ± Y tens = __" linked with "X0 ± Y0 = __"           */
+/* ====================================================================== */
+// Two gradable inputs; both correct answers are equal in magnitude but the first blank is the
+// COUNT of tens (single digit) and the second is that count * 10.
+// add: X tens + Y tens = (X+Y) tens ; X0 + Y0 = (X+Y)0   (X+Y <= 9 so the count stays a single digit)
+// sub: X tens − Y tens = (X−Y) tens ; X0 − Y0 = (X−Y)0   (X>Y, result >= 1 ten)
+function pickTens(kind){
+  if(kind==='add'){
+    const X=randInt(1,8); const Y=randInt(1,9-X);        // X+Y in 2..9
+    return {kind,X,Y,count:X+Y};
+  } else {
+    const X=randInt(2,9); const Y=randInt(1,X-1);        // X>Y, X−Y in 1..8
+    return {kind,X,Y,count:X-Y};
+  }
+}
+const tensPick = distinctBy((kind)=>pickTens(kind), p=>p.kind+':'+p.X+','+p.Y);
+function gTens(i){
+  const {kind,X,Y,count}=tensPick(tensKind(i));
+  const op = kind==='add' ? '+' : '&minus;';
+  const big = count*10;                                   // the X0 ± Y0 answer
+  return '<div class="item"><span class="label">'+i+'.</span> Fill in both blanks.'
+    + '<div class="linked">'
+    +   '<span class="eq">'+X+' tens '+op+' '+Y+' tens = '+ansIn(count)+' tens</span>'
+    +   '<span class="eq">'+(X*10)+' '+op+' '+(Y*10)+' = '+ansIn(big)+'</span>'
+    + '</div></div>';
+}
+
+/* ====================================================================== */
+/* 8. WORD PROBLEMS — join / take-away / compare / part-whole (within 100)*/
+/* ====================================================================== */
+const NAMES=['Mia','Leo','Ava','Noah','Zoe','Kai','Ivy','Sam','Eli','Mei','Ben','Tara','Omar','Lily','Finn','Nora'];
+const NOUNS=[
+  {one:'sticker',many:'stickers'},{one:'marble',many:'marbles'},{one:'sweet',many:'sweets'},
+  {one:'shell',many:'shells'},{one:'card',many:'cards'},{one:'bead',many:'beads'},
+  {one:'stamp',many:'stamps'},{one:'crayon',many:'crayons'},{one:'button',many:'buttons'},
+  {one:'coin',many:'coins'},{one:'block',many:'blocks'},{one:'leaf',many:'leaves'},
+];
+let nameI=0, nounI=0;
+const names = shuffle(NAMES.slice());
+const nouns = shuffle(NOUNS.slice());
+const nextName = ()=> names[(nameI++)%names.length];
+const nextNoun = ()=> nouns[(nounI++)%nouns.length];
+
+function pickWord(kind){
+  if(kind==='join'){
+    const a=randInt(11,60), b=randInt(11,99-a>=11?99-a:11);
+    const aa=a, bb=Math.min(b,99-a);                     // ensure aa+bb <= 99
+    return {kind, a:aa, b:bb, ans:aa+bb};
+  }
+  if(kind==='takeaway'){
+    const start=randInt(20,99), removed=randInt(1,start-1);
+    return {kind, start, removed, ans:start-removed};
+  }
+  if(kind==='compare'){
+    const big=randInt(20,99), small=randInt(1,big-1);
+    return {kind, big, small, ans:big-small};
+  }
+  // partwhole
+  const whole=randInt(20,99), part=randInt(1,whole-1);
+  return {kind, whole, part, ans:whole-part};
+}
+// key on the rendered numbers so two word problems are never numerically identical
+const wordPick = distinctBy((kind)=>pickWord(kind), p=>p.kind+':'+(p.a||p.start||p.big||p.whole)+','+(p.b||p.removed||p.small||p.part));
+function gWord(i){
+  const p=wordPick(wordKind(i));
+  const nm=nextName(), no=nextNoun();
+  let story, sentence, ans=p.ans;
+  if(p.kind==='join'){
+    const nm2=nextName();
+    story = nm+' has '+p.a+' '+no.many+'. '+nm2+' has '+p.b+' '+no.many+'.';
+    sentence = 'Altogether they have '+wbl(ans)+' '+no.many+'.';
+  } else if(p.kind==='takeaway'){
+    story = nm+' has '+p.start+' '+no.many+'. '+nm+' gives away '+p.removed+' '+(p.removed===1?no.one:no.many)+'.';
+    sentence = nm+' has '+wbl(ans)+' '+no.many+' left.';
+  } else if(p.kind==='compare'){
+    const nm2=nextName();
+    story = nm+' has '+p.big+' '+no.many+'. '+nm2+' has '+p.small+' '+no.many+'.';
+    sentence = nm+' has '+wbl(ans)+' more '+no.many+' than '+nm2+'.';
+  } else { // partwhole
+    story = 'There are '+p.whole+' '+no.many+' in a box. '+p.part+' of them are red.';
+    sentence = 'The other '+wbl(ans)+' '+no.many+' are not red.';
+  }
+  return '<div class="item"><span class="label">'+i+'.</span> '+story
+    + '<div class="row">'+sentence+'</div></div>';
+}
+
+/* ---------- assemble ---------- */
+function section(title, count, fn, gridCss){
+  if(count<=0) return '';
+  let body=''; for(let i=0;i<count;i++) body+=fn(i+1);
+  const wrap = gridCss ? '<div class="grid">'+body+'</div>' : body;
+  return '<h2>'+title+'</h2>'+wrap;
+}
+let html='';
+html+=section('Add the tens and ones.', cfg.place, gPlace);
+html+=section('Add. Write the total in the boxes.', cfg.coladd, gColAdd);
+html+=section('Subtract. Write the answer in the boxes.', cfg.colsub, gColSub);
+html+=section('Add.', cfg.add, gAdd, true);
+html+=section('Subtract.', cfg.sub, gSub, true);
+html+=section('Add the three numbers.', cfg.three, gThree, true);
+html+=section('Tens facts — fill in both blanks.', cfg.tens, gTens);
+html+=section('Solve the word problems.', cfg.word, gWord);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  add & subtract within 100';
+
+/* ---------- wiring (shared engine) ---------- */
+WS.wireChips();
+WS.wirePanel(cfg, ['place','coladd','colsub','add','sub','three','tens','word'],
+  { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>

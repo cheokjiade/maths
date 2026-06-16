@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Length Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* length-specific components (rulers + bars + curves drawn as inline SVG) */
+  .qrow { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  input.txt.short { width:64px; }
+  .lenvis { margin:6px 0; }
+  svg.ruler, svg.barsvg, svg.nonstd, svg.curve { display:block; max-width:100%; height:auto; }
+  /* ruler line-art */
+  .rl-body { fill:#fdf3d6; stroke:#000; stroke-width:2; }
+  .rl-tick { stroke:#000; stroke-width:1.5; }
+  .rl-tickmaj { stroke:#000; stroke-width:2; }
+  .rl-num { font-family:Verdana,Geneva,sans-serif; font-size:9px; fill:#333; text-anchor:middle; }
+  .rl-unit { font-family:Verdana,Geneva,sans-serif; font-size:8px; fill:#555; }
+  /* object / comparison bars */
+  .bar { stroke:#000; stroke-width:2; }
+  .barlabel { font-family:'Comic Sans MS','Century Gothic',sans-serif; font-size:14px; font-weight:bold; fill:#000; }
+  .barcap { font-family:Verdana,Geneva,sans-serif; font-size:10px; fill:#444; }
+  /* non-standard unit icons */
+  .unit-ico { stroke:#000; stroke-width:1.6; }
+  /* curves */
+  .cpath { fill:none; stroke:#000; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .barwrap, .curvewrap, .nonstdwrap { border:1.5px solid #aaa; border-radius:8px; padding:8px 10px; display:inline-block; background:#fff; }
+  .blanks { margin-top:8px; font-size:14pt; }
+  .blanks div { margin:6px 0; }
+  @media print {
+    .rl-body { fill:#fff; }
+    .barwrap, .curvewrap, .nonstdwrap { border-color:#000; }
+  }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>📏 Length Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Read a ruler: how many centimetres long is the object?">Measure (cm) <input type="number" id="f-ruler" min="0" max="20"></label>
+      <label data-tip="Measure an object with paper clips or beans (non-standard units).">Non-standard <input type="number" id="f-nonstd" min="0" max="20"></label>
+      <label data-tip="Look at two bars and tap which is longer/shorter/taller.">Compare <input type="number" id="f-compare" min="0" max="20"></label>
+      <label data-tip="Find the longest and shortest of four bars (A–D).">Longest/shortest <input type="number" id="f-extremes" min="0" max="20"></label>
+      <label data-tip="Drag (or tap) the bars A–D into order, shortest to longest.">Order <input type="number" id="f-order" min="0" max="20"></label>
+      <label data-tip="Three lines of the same width — which is the longest?">Curves <input type="number" id="f-curves" min="0" max="20"></label>
+      <label data-tip="Is an everyday object longer or shorter than 1 metre?">More/less than 1 m <input type="number" id="f-benchmark" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type the number of centimetres or units; type a letter (A–D); tap a choice; or drag the bars into order. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Length</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 📏⭐</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  ruler:WS.clamp(WS.toInt(WS.Q.get('ruler'),3),0,20), nonstd:WS.clamp(WS.toInt(WS.Q.get('nonstd'),3),0,20),
+  compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20), extremes:WS.clamp(WS.toInt(WS.Q.get('extremes'),3),0,20),
+  order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20), curves:WS.clamp(WS.toInt(WS.Q.get('curves'),2),0,20),
+  benchmark:WS.clamp(WS.toInt(WS.Q.get('benchmark'),4),0,20) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
+
+// wrap a random picker so a section never repeats the same question (re-rolls; falls back after 40 tries)
+function distinctBy(pick, keyOf){ const used=new Set(); return ()=>{ let v; for(let g=0;g<40;g++){ v=pick(); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; }; }
+// k distinct integers in [lo,hi] (re-rolls)
+function distinctInts(k,lo,hi){ const s=new Set(); let guard=0; while(s.size<k && guard++<400){ s.add(randInt(lo,hi)); } return [...s]; }
+
+const LETTERS=['A','B','C','D','E','F'];
+const PALETTE=['#bcd6f6','#bfe7c2','#f6c0c0','#f6e3a8','#d9c2ee','#c9efe9'];
+
+/* ---------- input / select factories (allowed mechanisms only) ---------- */
+let uid=0;
+const ansIn=ans=>'<span class="field"><input class="ans gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const letterIn=ans=>'<span class="field"><input class="txt short gradable" data-kind="letter" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
+function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="sel-block" data-mode="one" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+
+/* ---------- SVG: cm ruler with an object bar drawn along it ---------- */
+// Geometry is exact: x(cm) = M + cm*CM. A bar from start..end has integer length (end-start) cm.
+function rulerSVG(maxCm, bars){
+  const CM=24, M=22, top=14, rulerY=70, rulerH=26, W=M*2+maxCm*CM, barGap=20;
+  const objCount=bars.length, H=rulerY+rulerH+18+objCount*barGap+8;
+  let s='<svg class="ruler" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  // ruler body
+  s+='<rect class="rl-body" x="'+(M-2)+'" y="'+rulerY+'" width="'+(maxCm*CM+4)+'" height="'+rulerH+'" rx="3"/>';
+  // ticks + numbers along the BOTTOM edge of the ruler
+  for(let c=0;c<=maxCm;c++){ const x=M+c*CM;
+    const half=(c%1===0); s+='<line class="rl-tickmaj" x1="'+x+'" y1="'+(rulerY+rulerH)+'" x2="'+x+'" y2="'+(rulerY+rulerH-12)+'"/>';
+    // minor mid ticks
+    if(c<maxCm){ const xm=x+CM/2; s+='<line class="rl-tick" x1="'+xm+'" y1="'+(rulerY+rulerH)+'" x2="'+xm+'" y2="'+(rulerY+rulerH-6)+'"/>'; }
+    s+='<text class="rl-num" x="'+x+'" y="'+(rulerY+rulerH-15)+'">'+c+'</text>';
+  }
+  s+='<text class="rl-unit" x="'+(M+maxCm*CM-2)+'" y="'+(rulerY-4)+'">cm</text>';
+  // object bars, sitting ABOVE the ruler, aligned to the 0 mark and ending on a whole cm
+  bars.forEach((b,i)=>{
+    const y=top+i*barGap, x0=M+b.start*CM, x1=M+b.end*CM;
+    s+='<rect class="bar" x="'+x0+'" y="'+y+'" width="'+(x1-x0)+'" height="13" rx="2" fill="'+(b.fill||PALETTE[i%PALETTE.length])+'"/>';
+    s+='<text class="barcap" x="'+(x1+5)+'" y="'+(y+11)+'">'+b.label+'</text>';
+  });
+  // a light drop-line from each bar's right end down to the ruler so the reading is unambiguous
+  bars.forEach((b,i)=>{ const y=top+i*barGap, x1=M+b.end*CM; s+='<line x1="'+x1+'" y1="'+(y+13)+'" x2="'+x1+'" y2="'+rulerY+'" stroke="#999" stroke-width="1" stroke-dasharray="3 3"/>'; });
+  s+='</svg>';
+  return s;
+}
+
+/* ---------- SVG: free comparison bars (lengths exact via whole-cm grid) ---------- */
+// rows: [{label, len}] — len is an integer "cm" on a hidden grid so proportions are exact and honest.
+function barsSVG(rows, vertical){
+  const CM=22, padL=26, padT=14, gap=26, maxLen=Math.max.apply(null,rows.map(r=>r.len));
+  if(vertical){
+    const baseY=10+maxLen*CM+6, colW=46, W=padL+rows.length*colW+10, H=baseY+26;
+    let s='<svg class="barsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+    s+='<line x1="'+(padL-8)+'" y1="'+baseY+'" x2="'+(padL+rows.length*colW)+'" y2="'+baseY+'" stroke="#000" stroke-width="2"/>';
+    rows.forEach((r,i)=>{ const x=padL+i*colW+6, h=r.len*CM, y=baseY-h, w=30;
+      s+='<rect class="bar" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2" fill="'+(r.fill||PALETTE[i%PALETTE.length])+'"/>';
+      s+='<text class="barlabel" x="'+(x+w/2)+'" y="'+(baseY+18)+'" text-anchor="middle">'+r.label+'</text>';
+    });
+    s+='</svg>'; return s;
+  }
+  const W=padL+maxLen*CM+30, H=padT+rows.length*gap+6;
+  let s='<svg class="barsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  s+='<line x1="'+padL+'" y1="'+(padT-4)+'" x2="'+padL+'" y2="'+(padT+rows.length*gap-6)+'" stroke="#000" stroke-width="2"/>';
+  rows.forEach((r,i)=>{ const y=padT+i*gap, w=r.len*CM;
+    s+='<rect class="bar" x="'+padL+'" y="'+y+'" width="'+w+'" height="15" rx="2" fill="'+(r.fill||PALETTE[i%PALETTE.length])+'"/>';
+    s+='<text class="barlabel" x="'+(padL-16)+'" y="'+(y+13)+'">'+r.label+'</text>';
+  });
+  s+='</svg>'; return s;
+}
+
+/* ---------- SVG: object above a row of K identical unit-icons ---------- */
+const UNITS=[
+  {name:'paper clips', one:'paper clip', w:30, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><rect class="unit-ico" x="3" y="4" width="22" height="13" rx="6" fill="none"/><rect class="unit-ico" x="8" y="7" width="14" height="7" rx="3" fill="none"/></g>'},
+  {name:'beans', one:'bean', w:24, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><ellipse class="unit-ico" cx="11" cy="10" rx="9" ry="6" fill="#cdb892"/></g>'},
+  {name:'cubes', one:'cube', w:26, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><rect class="unit-ico" x="3" y="3" width="18" height="16" rx="2" fill="#bcd6f6"/></g>'},
+  {name:'matchsticks', one:'matchstick', w:30, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><rect class="unit-ico" x="3" y="8" width="22" height="5" rx="2" fill="#e7c9a0"/><circle class="unit-ico" cx="25" cy="10" r="3.5" fill="#c0392b"/></g>'},
+];
+function nonstdSVG(obj, unit, K){
+  const uw=unit.w, padL=14, padT=10, rowY=44, W=padL*2+K*uw+10, objW=K*uw, H=rowY+30;
+  let s='<svg class="nonstd" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  // the object as a simple horizontal bar that spans exactly K units
+  s+='<rect class="bar" x="'+padL+'" y="'+padT+'" width="'+objW+'" height="16" rx="4" fill="'+obj.fill+'"/>';
+  s+='<text class="barcap" x="'+(padL)+'" y="'+(padT-1)+'">'+obj.label+'</text>';
+  // the row of K identical unit icons under it, edge to edge from the left of the object
+  for(let k=0;k<K;k++){ s+=unit.ico(padL+k*uw, rowY); }
+  s+='</svg>'; return s;
+}
+
+/* ---------- SVG: same-width paths of differing waviness ---------- */
+// All three start at x=L and end at x=R (same horizontal SPAN / width) but differ in path length.
+// straight (shortest) < scalloped < zig-zag (most extreme amplitude => longest).
+function curvePath(kind, y){
+  const L=14, R=250, midY=y, amp=(kind==='scalloped')?12:(kind==='zigzag')?18:0, n=6, seg=(R-L)/n;
+  if(kind==='straight') return 'M'+L+','+midY+' L'+R+','+midY;
+  if(kind==='scalloped'){ let d='M'+L+','+midY; for(let k=0;k<n;k++){ const x0=L+k*seg, x1=L+(k+1)*seg, cx=(x0+x1)/2, dir=(k%2===0)?-1:1; d+=' Q'+cx+','+(midY+dir*amp)+' '+x1+','+midY; } return d; }
+  // zigzag
+  let d='M'+L+','+midY; for(let k=1;k<=n;k++){ const x=L+k*seg, dir=(k%2===1)?-1:1; d+=' L'+x+','+(midY+dir*amp); } d+=' L'+R+','+midY; return d;
+}
+function curvesSVG(rows){ // rows:[{label,kind}]
+  const rowH=44, W=290, H=rows.length*rowH+8;
+  let s='<svg class="curve" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  rows.forEach((r,i)=>{ const y=24+i*rowH;
+    s+='<path class="cpath" d="'+curvePath(r.kind,y)+'"/>';
+    s+='<text class="barlabel" x="'+260+'" y="'+(y+5)+'">'+r.label+'</text>';
+    // small end-dots to make "same width / same endpoints" visually obvious
+    s+='<circle cx="14" cy="'+y+'" r="3" fill="#000"/><circle cx="250" cy="'+y+'" r="3" fill="#000"/>';
+  });
+  s+='</svg>'; return s;
+}
+
+/* ---------- content pools ---------- */
+const RULER_OBJECTS=['pencil','crayon','ribbon','straw','leaf','stick','eraser','marker','feather','nail','candle','spoon'];
+const NONSTD_OBJECTS=['pencil','book','shoe','ribbon','crayon','spoon','leaf','straw','comb','key'];
+// benchmark objects with their true less/more-than-1-metre classification
+const BENCHMARK=[
+  {name:'pencil', more:false}, {name:'spoon', more:false}, {name:'key', more:false},
+  {name:'fork', more:false}, {name:'crayon', more:false}, {name:'toothbrush', more:false},
+  {name:'shoe', more:false}, {name:'book', more:false},
+  {name:'door', more:true}, {name:'car', more:true}, {name:'school bus', more:true},
+  {name:'sofa', more:true}, {name:'bed', more:true}, {name:'giraffe', more:true},
+  {name:'flagpole', more:true}, {name:'canoe', more:true},
+];
+
+/* ---------- per-section pickers (distinct content) ---------- */
+const rulerObjPick   = distinctBy(()=>pick(RULER_OBJECTS), x=>x);
+const nonstdObjPick  = distinctBy(()=>pick(NONSTD_OBJECTS), x=>x);
+const nonstdUnitPick = balanced(UNITS.map((_,k)=>k)); // spread the 4 unit types
+const cmpVar         = balanced(['longer','shorter','taller']); // vary the question word
+const benchPick      = distinctBy(()=>pick(BENCHMARK), x=>x.name);
+// distinct nouns so compare/extremes questions read differently (their bars aren't in the dup signature)
+const HORIZ_NOUNS=['ribbon','rope','pencil','stick','straw','worm','crayon','snake','lace','wire','belt','twig'];
+const TALL_NOUNS=['tree','tower','plant','candle','pole','flower','lamp','bottle','ladder','rocket'];
+function makeNounPicker(){ const used=new Set(); return pool=>{ for(let g=0;g<40;g++){ const n=pick(pool); if(!used.has(n)){ used.add(n); return n; } } return pick(pool); }; }
+const cmpNoun=makeNounPicker(), extNoun=makeNounPicker();
+
+/* ---------- generators ---------- */
+// 1. Measure with a ruler (0–10 cm). One or two bars.
+function gRuler(i){
+  const obj=rulerObjPick();
+  const twoBar = rng()<0.5;
+  let html='<div class="item"><span class="label">'+i+'.</span> Look at the centimetre ruler.';
+  if(!twoBar){
+    const len=randInt(3,9);                       // integer length 3..9 cm, fits 0..10
+    html+='<div class="lenvis barwrap">'+rulerSVG(10,[{start:0,end:len,label:'the '+obj}])+'</div>';
+    html+='<div class="blanks"><div>The '+obj+' is '+ansIn(len)+' cm long.</div></div></div>';
+    return html;
+  }
+  // two bars: longer/shorter comparison, both whole cm, distinct lengths
+  const obj2=rulerObjPick();
+  let a=randInt(4,9), b=randInt(2,8); while(b===a){ b=randInt(2,8); }
+  const longLen=Math.max(a,b), shortLen=Math.min(a,b);
+  const longObj=(a>=b)?obj:obj2, shortObj=(a>=b)?obj2:obj;
+  html+='<div class="lenvis barwrap">'+rulerSVG(10,[
+      {start:0,end:a,label:'the '+obj},
+      {start:0,end:b,label:'the '+obj2}
+    ])+'</div>';
+  html+='<div class="blanks">'
+    +'<div>The '+obj+' is '+ansIn(a)+' cm long.</div>'
+    +'<div>The '+obj2+' is '+ansIn(b)+' cm long.</div>'
+    +'<div>The '+longObj+' is '+ansIn(longLen-shortLen)+' cm longer than the '+shortObj+'.</div>'
+    +'</div></div>';
+  return html;
+}
+
+// 2. Non-standard units: object above K identical unit-icons.
+function gNonstd(i){
+  const obj=nonstdObjPick();
+  const unit=UNITS[nonstdUnitPick(i)];
+  const K=randInt(3,7);
+  const fill=PALETTE[i%PALETTE.length];
+  let html='<div class="item"><span class="label">'+i+'.</span> Measure the '+obj+' with '+unit.name+'.';
+  html+='<div class="lenvis nonstdwrap">'+nonstdSVG({label:'the '+obj,fill:fill}, unit, K)+'</div>';
+  html+='<div class="blanks"><div>The '+obj+' is as long as '+ansIn(K)+' '+unit.name+'.</div></div></div>';
+  return html;
+}
+
+// 3. Compare two bars: tap which is longer / shorter / taller.
+function gCompare(i){
+  const word=cmpVar(i); const vertical=(word==='taller');
+  let a=randInt(3,10), b=randInt(2,9); while(b===a){ b=randInt(2,9); }
+  // label the bars A and B; figure out which one the question wants
+  const wantLong=(word!=='shorter');
+  const target = wantLong ? (a>b?'A':'B') : (a<b?'A':'B');
+  const rows=[{label:'A',len:a},{label:'B',len:b}];
+  const vis = vertical ? barsSVG(rows,true) : barsSVG(rows,false);
+  const noun = vertical ? cmpNoun(TALL_NOUNS) : cmpNoun(HORIZ_NOUNS);
+  const opts=shuffle([{html:'A',ok:target==='A'},{html:'B',ok:target==='B'}]);
+  let html='<div class="item"><span class="label">'+i+'.</span> Which '+noun+' is '+word+'?';
+  html+='<div class="lenvis barwrap">'+vis+'</div>';
+  html+=selBlock(opts)+'</div>';
+  return html;
+}
+
+// 4. Longest & shortest of four bars A–D.
+function gExtremes(i){
+  const lens=distinctInts(4,2,12); // 4 distinct integer lengths
+  while(lens.length<4){ const x=randInt(2,12); if(!lens.includes(x)) lens.push(x); }
+  const rows=LETTERS.slice(0,4).map((L,k)=>({label:L,len:lens[k]}));
+  let longest=rows[0], shortest=rows[0];
+  rows.forEach(r=>{ if(r.len>longest.len) longest=r; if(r.len<shortest.len) shortest=r; });
+  const noun=extNoun(HORIZ_NOUNS);
+  let html='<div class="item"><span class="label">'+i+'.</span> Look at the four '+noun+'s.';
+  html+='<div class="lenvis barwrap">'+barsSVG(rows,false)+'</div>';
+  html+='<div class="blanks">'
+    +'<div>The longest '+noun+' is '+letterIn(longest.label)+'.</div>'
+    +'<div>The shortest '+noun+' is '+letterIn(shortest.label)+'.</div>'
+    +'</div></div>';
+  return html;
+}
+
+// 5. Order four bars A–D shortest -> longest (drag-order mechanism).
+function gOrder(i){
+  const lens=distinctInts(4,2,12);
+  while(lens.length<4){ const x=randInt(2,12); if(!lens.includes(x)) lens.push(x); }
+  const rows=LETTERS.slice(0,4).map((L,k)=>({label:L,len:lens[k]}));
+  // sort letters by their bar length, shortest -> longest
+  const sorted=rows.slice().sort((p,q)=>p.len-q.len).map(r=>r.label);
+  const tiles=shuffle(rows.map(r=>r.label)).map(L=>'<span class="dtile" data-val="'+L+'">'+L+'</span>').join('');
+  const slots=sorted.map((L,k)=>'<span class="dslot" data-answer="'+L+'"></span>'+(k<sorted.length-1?'<span class="arrow" style="font-size:18pt;">&rarr;</span>':'')).join('');
+  let html='<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the strips into order, from the shortest to the longest.';
+  html+='<div class="lenvis barwrap">'+barsSVG(rows,false)+'</div>';
+  html+='<div class="dorder"><div class="dsource">'+tiles+'</div><div class="dslots">'+slots+'</div></div></div>';
+  return html;
+}
+
+// 6. Curves: three same-width lines; the wiggliest is longest.
+function gCurves(i){
+  const labels=shuffle(['A','B','C']);
+  // assign the three waviness kinds to the three labels
+  const kinds=shuffle(['straight','scalloped','zigzag']);
+  const rows=labels.map((L,k)=>({label:L,kind:kinds[k]}));
+  // longest = the zigzag (largest amplitude); shortest = straight
+  const longest=rows.find(r=>r.kind==='zigzag').label;
+  let html='<div class="item"><span class="label">'+i+'.</span> Each line starts and ends at the same dots (they have the same width). Which line is the longest?';
+  html+='<div class="lenvis curvewrap">'+curvesSVG(rows)+'</div>';
+  html+='<div class="blanks"><div>The longest line is '+letterIn(longest)+'.</div></div></div>';
+  return html;
+}
+
+// 7. Benchmark: more or less than 1 metre?
+function gBenchmark(i){
+  const o=benchPick();
+  const opts=[{html:'Less than 1 m',ok:!o.more},{html:'More than 1 m',ok:o.more}];
+  let html='<div class="item"><span class="label">'+i+'.</span> Is a '+o.name+' longer than 1 metre?';
+  html+=selBlock(opts)+'</div>';
+  return html;
+}
+
+/* ---------- assemble ---------- */
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Measure with the ruler (in centimetres).', cfg.ruler, gRuler);
+html+=section('Measure with units.', cfg.nonstd, gNonstd);
+html+=section('Which is longer?', cfg.compare, gCompare);
+html+=section('Find the longest and the shortest.', cfg.extremes, gExtremes);
+html+=section('Order the strips by length.', cfg.order, gOrder);
+html+=section('Compare the lines.', cfg.curves, gCurves);
+html+=section('Longer or shorter than 1 metre?', cfg.benchmark, gBenchmark);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  length: measure, compare & order';
+
+/* ---------- answer kinds + wiring (shared engine) ---------- */
+WS.addKind('letter', (v,a)=>String(v).trim().toUpperCase()===String(a).trim().toUpperCase());
+WS.wireChips();
+WS.enableDragOrder();
+WS.wirePanel(cfg, ['ruler','nonstd','compare','extremes','order','curves','benchmark'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>
