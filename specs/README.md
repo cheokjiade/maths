@@ -14,6 +14,7 @@ what is unique to each file.
 |------|--------|------------|
 | [`conventions.md`](conventions.md) | *(cross-cutting)* | Shared PRNG, marking contract, config, print & asset rules |
 | [`index.md`](index.md) | `index.html` | Contents page / site landing — the only non-generator page |
+| [`numbers10.md`](numbers10.md) | `numbers10.html` | Numbers 1–10 generator — count/write, match, colour-N, same/which-set, compare |
 | [`subtraction.md`](subtraction.md) | `subtraction.html` | Subtraction generator — full requirements spec + as-built implementation notes |
 | [`addition.md`](addition.md) | `addition.html` | Addition generator (sums within 10) — ten question types incl. colour-match |
 | [`shapes.md`](shapes.md) | `shapes.html` | Shapes generator — incl. the interactive copy-the-figure grid |

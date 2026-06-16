@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numbers 1 to 10 Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* numbers-1-to-10-specific components */
+  .qrow { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  input.word { width:110px; }
+  .pic-box { border:1.5px solid #888; border-radius:6px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .obj { width:30px; height:30px; }
+  .grp { display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .chip.imgchip { border-radius:10px; padding:5px; }
+  .chip.imgchip img { width:30px; height:30px; }
+  .chip.setchip { border-radius:10px; padding:8px; flex-direction:column; gap:4px; }
+  .chip.setchip .setlabel { font-weight:bold; }
+  .matchrow { display:flex; align-items:center; gap:12px; margin:6px 0; flex-wrap:wrap; }
+  .matchrow .num { font-weight:bold; min-width:30px; font-size:18pt; }
+  .seq { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .seqbox { width:50px; height:50px; border:2px solid var(--ink); border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:18pt; }
+  .seqbox input { width:100%; height:100%; border:none; text-align:center; font:inherit; font-size:18pt; background:transparent; }
+  .arrow { font-size:18pt; }
+  .cmp-line { margin:6px 0; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>🔟 Numbers 1 to 10 Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Count the objects and write the number and the word.">Count &amp; write <input type="number" id="f-count" min="0" max="20"></label>
+      <label data-tip="Match a number to its word.">Match <input type="number" id="f-match" min="0" max="10"></label>
+      <label data-tip="Colour (tap) exactly N objects in a row.">Colour N <input type="number" id="f-colourn" min="0" max="20"></label>
+      <label data-tip="Tap the two groups that have the same number of objects.">Same number <input type="number" id="f-same" min="0" max="20"></label>
+      <label data-tip="Which set has more / fewer — tap set A or B.">Which set <input type="number" id="f-which" min="0" max="20"></label>
+      <label data-tip="What number comes next in the sequence.">What's next <input type="number" id="f-next" min="0" max="20"></label>
+      <label data-tip="Count two sets and fill in smaller/greater comparisons.">Compare <input type="number" id="f-compare" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type digits or words (e.g. 5 or "five"); tap objects/sets to select. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Numbers 1 to 10</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 🔟⭐</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  count:WS.clamp(WS.toInt(WS.Q.get('count'),3),0,20), match:WS.clamp(WS.toInt(WS.Q.get('match'),1),0,10),
+  colourn:WS.clamp(WS.toInt(WS.Q.get('colourn'),3),0,20), same:WS.clamp(WS.toInt(WS.Q.get('same'),2),0,20),
+  which:WS.clamp(WS.toInt(WS.Q.get('which'),2),0,20), next:WS.clamp(WS.toInt(WS.Q.get('next'),3),0,20),
+  compare:WS.clamp(WS.toInt(WS.Q.get('compare'),2),0,20) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+const NUMWORD = WS.NUMWORD;
+
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const OBJS=[
+  {cp:'1f34e',one:'apple',many:'apples'},{cp:'1f388',one:'balloon',many:'balloons'},{cp:'1f986',one:'duck',many:'ducks'},
+  {cp:'1f41f',one:'fish',many:'fish'},{cp:'1f36a',one:'cookie',many:'cookies'},{cp:'1f353',one:'strawberry',many:'strawberries'},
+  {cp:'1f41d',one:'bee',many:'bees'},{cp:'1f426',one:'bird',many:'birds'},{cp:'1f98b',one:'butterfly',many:'butterflies'},
+  {cp:'2b50',one:'star',many:'stars'},{cp:'270f',one:'pencil',many:'pencils'},{cp:'1f697',one:'car',many:'cars'},
+  {cp:'1f370',one:'cake',many:'cakes'},{cp:'26f5',one:'boat',many:'boats'},{cp:'1f3c0',one:'ball',many:'balls'},
+  {cp:'1f41a',one:'shell',many:'shells'},{cp:'1f6a9',one:'flag',many:'flags'},{cp:'1f431',one:'cat',many:'cats'},{cp:'1f430',one:'rabbit',many:'rabbits'},
+];
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+const grp=(cp,n)=>{ let s=''; for(let i=0;i<n;i++) s+=img(cp); return '<span class="grp">'+s+'</span>'; };
+
+let uid=0;
+const numIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const wordIn=a=>'<span class="field"><input class="ans word gradable" data-answer="'+a+'" type="text" autocomplete="off"></span>';
+const letterIn=a=>'<span class="field"><input class="ans gradable" data-kind="letter" data-answer="'+a+'" type="text" autocomplete="off"></span>';
+const seqInput=a=>'<span class="seqbox"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(mode,opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip '+(o.cls||'')+'" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="sel-block" data-mode="'+mode+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+function countnBlock(need,chips){ const id='c'+(uid++); return '<div class="countn" data-need="'+need+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+
+/* ---- generators ---- */
+function gCount(i){ const o=pick(OBJS); const N=randInt(1,10);
+  return '<div class="item"><span class="label">'+i+'.</span> Count, then write the number and the word.<div class="qrow"><div class="pic-box">'+grp(o.cp,N)+'</div><div>Number: '+numIn(N)+' &nbsp; Word: '+wordIn(NUMWORD[N])+'</div></div></div>'; }
+function gMatch(i){ const nums=distinct(4,1,10); let rows='';
+  nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:NUMWORD[x],ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock('one',opts)+'</div>'; });
+  return '<div class="item"><span class="label">'+i+'.</span> Match each number to its word (tap the word).'+rows+'</div>'; }
+function gColourN(i){ const o=pick(OBJS); const M=randInt(6,10); const N=randInt(2,M);
+  let chips=''; for(let k=0;k<M;k++) chips+='<button type="button" class="chip imgchip">'+img(o.cp)+'</button>';
+  return '<div class="item"><span class="label">'+i+'.</span> Colour (tap) '+N+' '+o.many+'.'+countnBlock(N,chips)+'</div>'; }
+function gSame(i){ const o=pick(OBJS); const T=randInt(2,7); const nGroups=pick([3,4]);
+  const others=shuffle([2,3,4,5,6,7,8].filter(x=>x!==T));
+  const opts=[{html:grp(o.cp,T),ok:true,cls:'imgchip'},{html:grp(o.cp,T),ok:true,cls:'imgchip'}];
+  for(let k=0;k<nGroups-2;k++) opts.push({html:grp(o.cp,others[k]),ok:false,cls:'imgchip'});
+  return '<div class="item"><span class="label">'+i+'.</span> Tap the two groups with the <b>same</b> number of '+o.many+'.'+selBlock('many',shuffle(opts))+'</div>'; }
+function gWhich(i){ const o=pick(OBJS); let a=randInt(2,9), b=randInt(2,9); while(a===b) b=randInt(2,9);
+  const mode=pick(['more','fewer']); const target= mode==='more'?Math.max(a,b):Math.min(a,b);
+  const optA={html:'<span class="setlabel">A</span>'+grp(o.cp,a), ok:a===target, cls:'setchip'};
+  const optB={html:'<span class="setlabel">B</span>'+grp(o.cp,b), ok:b===target, cls:'setchip'};
+  return '<div class="item"><span class="label">'+i+'.</span> Which set has <b>'+mode+'</b>? (tap it)'+selBlock('one',[optA,optB])+'</div>'; }
+function gNext(i){ const s=pick([1,-1]); const len=4; let start;
+  if(s>0) start=randInt(1,10-(len-1)*s); else start=randInt(1-(len-1)*s,10);
+  const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
+  let seq='<div class="seq">'; for(let k=0;k<len;k++){ seq+= k===len-1? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; } seq+='</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> What number comes next?'+seq+'</div>'; }
+function gCompare(i){ const o=pick(OBJS); let cx=randInt(2,9), cy=randInt(2,9); while(cx===cy) cy=randInt(2,9);
+  const small=Math.min(cx,cy), large=Math.max(cx,cy); const fewer= cx<cy?'X':'Y';
+  return '<div class="item"><span class="label">'+i+'.</span> Count the two sets, then fill in the blanks.'
+    +'<div class="qrow"><div><b>Set X</b><div class="pic-box">'+grp(o.cp,cx)+'</div></div><div><b>Set Y</b><div class="pic-box">'+grp(o.cp,cy)+'</div></div></div>'
+    +'<div class="cmp-line">Set '+letterIn(fewer)+' has fewer.</div>'
+    +'<div class="cmp-line">'+numIn(small)+' is smaller than '+numIn(large)+'.</div>'
+    +'<div class="cmp-line">'+numIn(large)+' is greater than '+numIn(small)+'.</div></div>'; }
+
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Count and write the number and word.', cfg.count, gCount);
+html+=section('Match numbers to words.', cfg.match, gMatch);
+html+=section('Colour the objects.', cfg.colourn, gColourN);
+html+=section('Colour the groups with the same number.', cfg.same, gSame);
+html+=section('Which set has more or fewer?', cfg.which, gWhich);
+html+=section('What number comes next?', cfg.next, gNext);
+html+=section('Count and compare.', cfg.compare, gCompare);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  numbers 1 to 10';
+
+/* ---- colour-exactly-N: own chip toggling + custom marker ---- */
+document.querySelectorAll('.countn .chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
+function colourNExtra(){
+  let total=0, right=0;
+  document.querySelectorAll('.countn').forEach(b=>{
+    total++;
+    const need=+b.dataset.need;
+    const sel=b.querySelectorAll('.chip.selected');
+    const ok=sel.length===need;
+    b.querySelectorAll('.chip').forEach(c=>c.classList.remove('correct','incorrect'));
+    sel.forEach(c=>c.classList.add(ok?'correct':'incorrect'));
+    if(ok) right++;
+  });
+  return { total, right };
+}
+
+/* ---- wiring (shared engine) ---- */
+WS.addKind('letter', (v,a)=>(v||'').trim().toUpperCase()===(a||'').trim().toUpperCase());
+WS.wireChips();
+WS.wirePanel(cfg, ['count','match','colourn','same','which','next','compare'], {
+  mark:  () => WS.mark({ extras: [colourNExtra] }),
+  clear: () => WS.clearAll(),
+});
+</script>
+</body>
+</html>
