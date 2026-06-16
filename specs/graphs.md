@@ -22,8 +22,15 @@ interaction.
 
 | Section (fn) | Asks | Child does | Visual |
 |--------------|------|------------|--------|
-| Read (`gRead`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph: 3–4 category rows, each a label + a row of icons; "Each ⬛ stands for 1" |
+| Read (`gRead`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph of 3–4 categories — see **graph styles** below |
 | Build (`gBuild`) | "count each tray, shade the graph to match" | taps cells to shade each column | 3–4 columns of empty cells, each captioned with a tray of objects |
+
+**Graph styles** (from a `THEMES` table, picked per graph, in **horizontal or vertical** orientation):
+- **Object graph** — each category *is* its own object, drawn with its own emoji (animals, toys,
+  snacks). Phrasing is "There are N {category}"; **no key line** (rows use different icons).
+- **Generic-symbol graph** — one drawn shape (▲ / ★ / ■ / ●) stands for 1 item; categories are
+  **names/labels**. Two phrasings: *count* (fruit names → "There are N mangoes") and *owner*
+  (children's names → "John has N stickers"). Adds a key: **"Each ▲ stands for 1 fruit."**
 
 **Read sub-questions** (all derived from the category counts): *count of category 1*, *more A than B*,
 *fewer B than A*, *total altogether* (numeric); *the most* and *the fewest* (tap a category word).
@@ -46,9 +53,10 @@ URL params, all clamped (seed defaults to `WS.randomSeed()`):
 
 ## 4. Complicated logic
 
-1. **The graph renderer.** Each category is a `.grow` flex row — a fixed-width `.glabel` and a
-   `.gicons` strip of N `<img>` — inside a bordered `.graph`. Counting questions read off the strip
-   lengths; pictures *are* the data, so no separate answer store is needed.
+1. **The graph renderer.** `renderGraphH` makes `.grow` rows (a `.glabel` + a `.gicons` strip);
+   `renderGraphV` makes `.vcol` columns (a bottom-up `.vstack` of `.vcell` + a `.vlabel`). Both take a
+   `cellFn(cat)` — `img(cat.cp)` for object graphs, `symbolSVG(theme.symbol)` for symbol graphs.
+   Pictures *are* the data, so no separate answer store is needed.
 2. **Most / fewest are `.sel-block`s** of category-word chips (`data-ok` on the max/min category),
    graded all-or-nothing by `WS.markChips`.
 3. **Build-the-graph — a custom marker.** Columns are `.bg-col[data-need]`; cells are `.cell` buttons
@@ -73,11 +81,14 @@ URL params, all clamped (seed defaults to `WS.randomSeed()`):
 
 ## 5. Insights & gotchas
 
-- **Self-consistency ≠ correctness.** An early bug referenced `.many` on the category *wrapper*
-  (should be `.noun.many`), rendering "There are 4 more **undefined** than **undefined**." The browser
-  verifier AND the first logic-check *passed* — both compared the broken value to itself. Only the
-  rendered screenshot caught it. Lesson re-learned: eyeball the render, and have the logic-check
-  assert against an **independent** source (here: the literal noun list / `!== 'undefined'`).
+- **Self-consistency ≠ correctness (twice).** (1) An early bug referenced `.many` on the category
+  *wrapper*, rendering "4 more **undefined** than undefined"; both the browser verifier and a naive
+  logic-check passed — only the screenshot caught it. (2) Vertical **object** graphs rendered with
+  *blank* columns: `img()` emits a class-less `<img>` sized only by `.gicons img` (horizontal); the
+  data logic-check counted `.vcell` elements (which existed) and passed, and symbol graphs were fine
+  (their `<svg>` carries width/height) — again only the screenshot (seed `otter`) revealed it. Fix:
+  `.gicons img, .vcell img { width:26px; height:26px }`. Lesson, reinforced: **eyeball multiple
+  seeds/orientations**, and assert the logic-check against an independent source, not the artifact.
 - `.gicons` wraps, so a tall category (8 icons) may span two lines — acceptable, but the bar length is
   then less visually obvious.
 - Build cells shade light-blue on screen; on paper the child shades by hand (cells print as boxes).

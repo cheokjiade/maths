@@ -13,9 +13,16 @@
   .grow:last-child { border-bottom:none; }
   .glabel { width:110px; padding:5px 8px; border-right:1px solid #999; font-size:13pt; font-weight:bold; }
   .gicons { display:flex; gap:3px; padding:5px 8px; flex-wrap:wrap; min-height:30px; align-items:center; }
-  .gicons img { width:26px; height:26px; }
+  .gicons img, .vcell img { width:26px; height:26px; }
   .gkey { font-size:11pt; color:#444; margin:6px 0; display:flex; align-items:center; gap:6px; }
-  .gkey img { width:22px; height:22px; }
+  .gkey img, .gkey .gsym { width:22px; height:22px; }
+  .gsym { vertical-align:middle; }
+  /* vertical graph */
+  .vgraph { display:inline-flex; gap:14px; align-items:flex-end; border:2px solid var(--ink); padding:8px 12px 0; margin:6px 0; }
+  .vcol { display:flex; flex-direction:column; align-items:center; }
+  .vstack { display:flex; flex-direction:column-reverse; gap:2px; min-height:18px; }
+  .vcell { line-height:0; }
+  .vlabel { margin-top:5px; font-size:12pt; font-weight:bold; border-top:1px solid #999; padding-top:4px; min-width:58px; text-align:center; }
   .subq { margin:6px 0; }
   /* build-the-graph */
   .buildgraph { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; margin:8px 0; }
@@ -83,22 +90,59 @@ let uid=0;
 const numIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
 function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip namechip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<span class="sel-block" data-mode="one" id="'+id+'"><span class="chips">'+chips+'</span></span>'; }
 
+/* ---- graph themes ----
+   'object' graphs: each category is its own object, drawn with its own icon (no key line).
+   'symbol' graphs: one generic shape stands for 1 item; categories are names/labels. */
+const THEMES=[
+  { style:'object', mode:'count', item:{s:'animal',p:'animals'}, cats:[
+    {cp:'1f430',label:'Rabbit',many:'rabbits'},{cp:'1f431',label:'Cat',many:'cats'},{cp:'1f41f',label:'Fish',many:'fish'},{cp:'1f426',label:'Bird',many:'birds'},{cp:'1f986',label:'Duck',many:'ducks'},{cp:'1f41d',label:'Bee',many:'bees'}] },
+  { style:'object', mode:'count', item:{s:'toy',p:'toys'}, cats:[
+    {cp:'26f5',label:'Boat',many:'boats'},{cp:'1f697',label:'Car',many:'cars'},{cp:'1f3c0',label:'Ball',many:'balls'},{cp:'1f6a9',label:'Flag',many:'flags'},{cp:'2b50',label:'Star',many:'stars'}] },
+  { style:'object', mode:'count', item:{s:'snack',p:'snacks'}, cats:[
+    {cp:'1f34e',label:'Apple',many:'apples'},{cp:'1f353',label:'Strawberry',many:'strawberries'},{cp:'1f36a',label:'Cookie',many:'cookies'},{cp:'1f370',label:'Cake',many:'cakes'},{cp:'1f388',label:'Balloon',many:'balloons'}] },
+  { style:'symbol', symbol:'triangle', mode:'count', item:{s:'fruit',p:'fruits'}, cats:[
+    {label:'Mango',many:'mangoes'},{label:'Lime',many:'limes'},{label:'Guava',many:'guavas'},{label:'Papaya',many:'papayas'},{label:'Pear',many:'pears'},{label:'Plum',many:'plums'}] },
+  { style:'symbol', symbol:'star', mode:'owner', item:{s:'sticker',p:'stickers'}, cats:[
+    {label:'John'},{label:'Mary'},{label:'Raju'},{label:'Lee'},{label:'Ann'},{label:'Sam'},{label:'Ben'},{label:'Mia'}] },
+  { style:'symbol', symbol:'square', mode:'owner', item:{s:'stamp',p:'stamps'}, cats:[
+    {label:'Tom'},{label:'Sue'},{label:'Kim'},{label:'Dan'},{label:'Eva'},{label:'Ravi'}] },
+];
+function symbolSVG(kind){ const f='fill="#3a4a5a" stroke="#222" stroke-width="0.5"'; let inner;
+  if(kind==='triangle') inner='<polygon points="11,2 20,19 2,19" '+f+'/>';
+  else if(kind==='star') inner='<polygon points="11,1.5 13.5,8.2 20.5,8.5 15,12.9 16.9,19.5 11,15.5 5.1,19.5 7,12.9 1.5,8.5 8.5,8.2" '+f+'/>';
+  else if(kind==='square') inner='<rect x="3" y="3" width="16" height="16" '+f+'/>';
+  else inner='<circle cx="11" cy="11" r="9" '+f+'/>';
+  return '<svg class="gsym" width="22" height="22" viewBox="0 0 22 22">'+inner+'</svg>'; }
+function renderGraphH(cats, cellFn){ let rows=''; cats.forEach(c=>{ let cells=''; for(let z=0;z<c.count;z++) cells+=cellFn(c); rows+='<div class="grow"><span class="glabel">'+c.label+'</span><span class="gicons">'+cells+'</span></div>'; }); return '<div class="graph">'+rows+'</div>'; }
+function renderGraphV(cats, cellFn){ let cols=''; cats.forEach(c=>{ let cells=''; for(let z=0;z<c.count;z++) cells+='<div class="vcell">'+cellFn(c)+'</div>'; cols+='<div class="vcol"><div class="vstack">'+cells+'</div><div class="vlabel">'+c.label+'</div></div>'; }); return '<div class="vgraph">'+cols+'</div>'; }
+
 /* ---- read a picture graph ---- */
 function gRead(i){
-  const k=pick([3,4]); const counts=distinct(k,2,8); const cats=[]; for(let j=0;j<k;j++) cats.push({noun:pickNoun(),count:counts[j]});
-  let rows=''; cats.forEach(c=>{ let icons=''; for(let z=0;z<c.count;z++) icons+=img(c.noun.cp); rows+='<div class="grow"><span class="glabel">'+cap(c.noun.one)+'</span><span class="gicons">'+icons+'</span></div>'; });
-  const graph='<div class="graph">'+rows+'</div><div class="gkey">Each '+img(cats[0].noun.cp)+' stands for 1.</div>';
+  const th=pick(THEMES); const k=pick([3,4]); const counts=distinct(k,2,8);
+  const cats=shuffle(th.cats).slice(0,k).map((c,j)=>Object.assign({},c,{count:counts[j]}));
+  const cellFn = th.style==='symbol' ? (function(){ return symbolSVG(th.symbol); }) : (function(c){ return img(c.cp); });
+  const graph = (rng()<0.5 ? renderGraphV : renderGraphH)(cats, cellFn);
+  const key = th.style==='symbol' ? '<div class="gkey">Each '+symbolSVG(th.symbol)+' stands for 1 '+th.item.s+'.</div>' : '';
   const total=cats.reduce((s,c)=>s+c.count,0);
   const maxC=cats.reduce((a,b)=>b.count>a.count?b:a), minC=cats.reduce((a,b)=>b.count<a.count?b:a);
-  const c0=cats[0];
+  const c0=cats[0], owner=th.mode==='owner', itemP=th.item.p;
+  const nameOf=c=> owner ? c.label : c.many;
+  const mostBlk=selBlock(shuffle(cats.map(c=>({html:nameOf(c),ok:c===maxC}))));
+  const fewBlk =selBlock(shuffle(cats.map(c=>({html:nameOf(c),ok:c===minC}))));
   let qs='';
-  qs+='<div class="subq">There are '+numIn(c0.count)+' '+c0.noun.many+'.</div>';
-  qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' more '+maxC.noun.many+' than '+minC.noun.many+'.</div>';
-  qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' fewer '+minC.noun.many+' than '+maxC.noun.many+'.</div>';
-  qs+='<div class="subq">There are '+numIn(total)+' altogether.</div>';
-  qs+='<div class="subq">There are the most '+selBlock(shuffle(cats.map(c=>({html:c.noun.many,ok:c===maxC}))))+'.</div>';
-  qs+='<div class="subq">There are the fewest '+selBlock(shuffle(cats.map(c=>({html:c.noun.many,ok:c===minC}))))+'.</div>';
-  return '<div class="item"><span class="label">'+i+'.</span> Read the graph, then fill in the blanks (tap a word for the most/fewest).'+graph+qs+'</div>';
+  if(owner){
+    qs+='<div class="subq">'+c0.label+' has '+numIn(c0.count)+' '+itemP+'.</div>';
+    qs+='<div class="subq">'+maxC.label+' has '+numIn(maxC.count-minC.count)+' more '+itemP+' than '+minC.label+'.</div>';
+    qs+='<div class="subq">'+minC.label+' has '+numIn(maxC.count-minC.count)+' fewer '+itemP+' than '+maxC.label+'.</div>';
+  } else {
+    qs+='<div class="subq">There are '+numIn(c0.count)+' '+c0.many+'.</div>';
+    qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' more '+maxC.many+' than '+minC.many+'.</div>';
+    qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' fewer '+minC.many+' than '+maxC.many+'.</div>';
+  }
+  qs+='<div class="subq">There are '+numIn(total)+' '+itemP+' altogether.</div>';
+  if(owner){ qs+='<div class="subq">'+mostBlk+' has the most.</div>'; qs+='<div class="subq">'+fewBlk+' has the fewest.</div>'; }
+  else { qs+='<div class="subq">There are the most '+mostBlk+'.</div>'; qs+='<div class="subq">There are the fewest '+fewBlk+'.</div>'; }
+  return '<div class="item"><span class="label">'+i+'.</span> Read the graph, then fill in the blanks (tap a word for the most/fewest).'+graph+key+qs+'</div>';
 }
 
 /* ---- build a graph (shade cells) ---- */
