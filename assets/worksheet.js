@@ -23,8 +23,9 @@ window.WS = (function () {
       distinct:(k,lo,hi)=>{ const s=new Set(); let g=0; while(s.size<k && g++<500) s.add(lo+Math.floor(rng()*(hi-lo+1))); return [...s]; },
     };
   }
-  /* short, human-typeable random seed for fresh (no ?seed=) visits */
-  function randomSeed(){ return Math.random().toString(36).slice(2, 7); }
+  /* short, child-friendly random seed (a 4–5 letter word) for fresh (no ?seed=) visits */
+  const SEEDWORDS = ['bear','duck','fish','lion','bird','cake','moon','tree','ball','frog','star','swan','deer','goat','crab','seal','panda','tiger','zebra','koala','puppy','bunny','candy','robot','train','plane','smile','happy','jelly','mango','lemon','peach','grape','melon','daisy','cloud','snail','otter','whale','shark','sheep','horse','mouse','snake','apple','sunny','teddy','kitty','fairy','magic','pearl','coral','berry','honey','pizza','kite','leaf','rose','plum','pear','kiwi'];
+  function randomSeed(){ return SEEDWORDS[Math.floor(Math.random() * SEEDWORDS.length)]; }
 
   /* ---- config helpers ---- */
   const Q = new URLSearchParams(location.search);

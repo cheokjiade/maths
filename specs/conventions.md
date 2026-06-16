@@ -52,8 +52,9 @@ const { randInt, pick, shuffle, distinct } = WS.helpers(rng);   // rng-bound hel
 
 ### Random seed on a fresh visit
 
-If the URL has **no** `?seed=`, the page picks a short random one (`WS.randomSeed()`, ~5 chars) so each
-fresh open differs, then `WS.wirePanel` writes it back into the address bar with
+If the URL has **no** `?seed=`, the page picks a random **child-friendly 4–5 letter word**
+(`WS.randomSeed()`, from a built-in list — e.g. `tiger`, `duck`, `kitty`) so each fresh open differs
+and the seed is easy to read/share, then `WS.wirePanel` writes it back into the address bar with
 `history.replaceState` — so the worksheet stays reproducible/bookmarkable on refresh.
 
 ```javascript
