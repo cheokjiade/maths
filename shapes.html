@@ -171,7 +171,8 @@ const COMPOSITES=[
 ];
 function compFig(c,showSeam){
   const f='fill="#fff" stroke="#000" stroke-width="3" stroke-linejoin="round"';
-  const seam=showSeam ? '<line x1="'+c.divider[0]+'" y1="'+c.divider[1]+'" x2="'+c.divider[2]+'" y2="'+c.divider[3]+'" stroke="#000" stroke-width="2"/>' : '';
+  // the internal dividing line is DASHED in the workbook (the solid outline is the figure's edge)
+  const seam=showSeam ? '<line x1="'+c.divider[0]+'" y1="'+c.divider[1]+'" x2="'+c.divider[2]+'" y2="'+c.divider[3]+'" stroke="#000" stroke-width="2" stroke-dasharray="5 4"/>' : '';
   return '<svg class="shp" width="116" height="116" viewBox="0 0 100 100"><path d="'+c.outline+'" '+f+'/>'+seam+'</svg>';
 }
 function gCompose(i){
