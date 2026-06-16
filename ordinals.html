@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordinal Numbers Worksheet Generator</title>
+<style>
+  @page { size:A4; margin:16mm 14mm; }
+  :root{ --ink:#000; --right:#137a13; --wrong:#c0142c; --accent:#2563eb; }
+  body{ font-family:"Comic Sans MS","Century Gothic",Verdana,sans-serif; font-size:17pt; color:var(--ink); line-height:1.7; max-width:880px; margin:0 auto; padding:20px; }
+  .panel{ background:#f3f4f6; border:1px solid #cbd0d6; border-radius:10px; padding:14px 16px; margin-bottom:22px; font-family:Verdana,sans-serif; font-size:11pt; line-height:1.5; }
+  .panel h3{ margin:0 0 10px; font-size:13pt; }
+  .panel .fields{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; }
+  .panel label{ display:flex; flex-direction:column; font-weight:bold; gap:3px; }
+  .panel input[type=text],.panel input[type=number]{ font-size:11pt; padding:4px 6px; border:1px solid #aaa; border-radius:5px; }
+  .panel input[type=number]{ width:56px; } .panel input[type=text]{ width:120px; }
+  .panel .btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .panel button{ font-size:11pt; padding:7px 14px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; font-weight:bold; }
+  .panel button.primary{ background:var(--accent); color:#fff; border-color:var(--accent);} .panel button.go{ background:#16a34a; color:#fff; border-color:#16a34a;}
+  .panel .hint{ font-weight:normal; color:#555; font-size:10pt; margin-top:8px; }
+  .score{ display:none; font-family:Verdana,sans-serif; font-size:15pt; font-weight:bold; margin:4px 0 18px; padding:8px 14px; border-radius:8px; background:#fffbe6; border:1px solid #e6d98a; }
+  h1{ text-align:center; border-bottom:3px solid var(--ink); padding-bottom:8px; margin-bottom:6px; font-size:24pt; }
+  .meta-line{ text-align:center; font-size:10pt; color:#666; margin:-2px 0 14px; font-family:Verdana,sans-serif; }
+  .name-row{ display:flex; justify-content:space-between; font-size:14pt; margin-bottom:22px; }
+  .name-row span{ border-bottom:1px solid var(--ink); display:inline-block; min-width:200px; }
+  h2{ font-size:18pt; margin-top:24px; margin-bottom:12px; }
+  .item{ margin-bottom:18px; page-break-inside:avoid; }
+  .label{ font-weight:bold; margin-right:6px; }
+
+  .field{ position:relative; display:inline-flex; align-items:center; }
+  input.txt{ font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:130px; }
+  input.short{ width:70px; }
+  input.correct{ color:var(--right); border-color:var(--right);} input.incorrect{ color:var(--wrong); border-color:var(--wrong);}
+  .correction{ color:var(--wrong); font-size:12pt; margin-left:4px; font-weight:bold; }
+
+  .row-objs{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin:8px 0; }
+  .tile{ width:46px; height:46px; border:2px solid var(--ink); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20pt; }
+  .objcap{ display:flex; flex-direction:column; align-items:center; font-size:10pt; color:#444; gap:2px; }
+  .obj{ width:42px; height:42px; }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .chip{ font-family:inherit; font-size:15pt; padding:6px 14px; border:2px solid var(--ink); border-radius:22px; background:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .chip.shapechip{ border-radius:10px; padding:5px; }
+  .chip img{ width:40px; height:40px; }
+  .chip.selected{ background:#fde68a; } .chip.correct{ background:#bbf7d0; border-color:var(--right);} .chip.incorrect{ background:#fecaca; border-color:var(--wrong);} .chip.missed{ border-style:dashed; border-color:var(--right); }
+  .matchrow{ display:flex; align-items:center; gap:12px; margin:6px 0; flex-wrap:wrap; }
+  .matchrow .sym{ font-weight:bold; min-width:46px; }
+
+  .footer{ text-align:center; font-size:11pt; margin-top:26px; color:#555; }
+  @media print{ body{ padding:0; } .no-print{ display:none !important; } input.correct,input.incorrect{ color:var(--ink); border-color:var(--ink);} .correction{ display:none; } .chip.selected,.chip.correct,.chip.incorrect{ background:#fff; border-color:var(--ink);} .chip.missed{ border-style:solid; } }
+</style>
+</head>
+<body>
+<div class="panel no-print">
+  <div style="margin-bottom:10px;"><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:bold;">&larr; All worksheets</a></div>
+  <h3>🥇 Ordinal Numbers Worksheet Generator <span style="font-weight:normal;font-size:10pt;color:#666;">(1st–10th)</span></h3>
+  <div class="fields">
+    <label>Seed <input type="text" id="f-seed"></label>
+    <label>Colour <input type="number" id="f-colour" min="0" max="20"></label>
+    <label>Match <input type="number" id="f-match" min="0" max="10"></label>
+    <label>Which letter <input type="number" id="f-which" min="0" max="20"></label>
+    <label>Position <input type="number" id="f-position" min="0" max="20"></label>
+    <label>Words/numerals <input type="number" id="f-words" min="0" max="20"></label>
+    <label>Picture <input type="number" id="f-picture" min="0" max="10"></label>
+  </div>
+  <div class="btns">
+    <button class="go" id="b-apply">Generate</button>
+    <button id="b-random">🎲 Random seed</button>
+    <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+    <button id="b-reset">Clear answers</button>
+    <button id="b-print">🖨️ Print</button>
+  </div>
+  <div class="hint">Type ordinals as "3rd", "third" or "3" — all accepted. Tap an object/word to select it. Same seed + settings = same worksheet.</div>
+</div>
+<div class="score" id="score"></div>
+<h1>Ordinal Numbers</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 🥇🥈🥉</div>
+
+<script>
+"use strict";
+function xmur3(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=(h<<13)|(h>>>19);}return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return (h^=h>>>16)>>>0;};}
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+const Q=new URLSearchParams(location.search);
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v)); const toInt=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
+const cfg={ seed:Q.get('seed')||'1',
+  colour:clamp(toInt(Q.get('colour'),3),0,20), match:clamp(toInt(Q.get('match'),1),0,10),
+  which:clamp(toInt(Q.get('which'),3),0,20), position:clamp(toInt(Q.get('position'),3),0,20),
+  words:clamp(toInt(Q.get('words'),4),0,20), picture:clamp(toInt(Q.get('picture'),2),0,10) };
+const rng=mulberry32(xmur3(cfg.seed)());
+const randInt=(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1));
+const pick=a=>a[Math.floor(rng()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const OWORD=['','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
+function ordSym(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function ordWord(n){ return OWORD[n]; }
+const LETTERS='ABCDEFGHIJ'.split('');
+const SIDES=['left','right'];
+function idxFrom(L,n,side){ return side==='left' ? n-1 : L-n; }
+
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const OBJS=[
+  {cp:'1f34e',one:'apple',many:'apples'},{cp:'1f388',one:'balloon',many:'balloons'},
+  {cp:'1f986',one:'duck',many:'ducks'},{cp:'1f41f',one:'fish',many:'fish'},
+  {cp:'1f36a',one:'cookie',many:'cookies'},{cp:'1f353',one:'strawberry',many:'strawberries'},
+  {cp:'1f41d',one:'bee',many:'bees'},{cp:'1f426',one:'bird',many:'birds'},
+  {cp:'1f98b',one:'butterfly',many:'butterflies'},{cp:'2b50',one:'star',many:'stars'},
+  {cp:'270f',one:'pencil',many:'pencils'},{cp:'1f697',one:'car',many:'cars'},
+  {cp:'1f370',one:'cake',many:'cakes'},{cp:'26f5',one:'boat',many:'boats'},
+  {cp:'1f3c0',one:'ball',many:'balls'},{cp:'1f41a',one:'shell',many:'shells'},
+  {cp:'1f6a9',one:'flag',many:'flags'},{cp:'1f431',one:'cat',many:'cats'},{cp:'1f430',one:'rabbit',many:'rabbits'},
+];
+const usedObj=new Set();
+function pickObj(){ const av=OBJS.filter(o=>!usedObj.has(o.cp)); const o=pick(av.length?av:OBJS); usedObj.add(o.cp); return o; }
+
+let uid=0;
+const txtIn=(kind,ans,short)=>'<span class="field"><input class="txt'+(short?' short':'')+' gradable" data-kind="'+kind+'" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
+function selBlock(mode,opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip '+(o.img?'shapechip':'')+'" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="sel-block" data-mode="'+mode+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+
+/* ---- generators ---- */
+function gColour(i){
+  const o=pickObj(); const L=randInt(6,8); const n=randInt(1,L); const side=pick(SIDES); const ci=idxFrom(L,n,side);
+  const opts=[]; for(let k=0;k<L;k++) opts.push({html:img(o.cp),ok:k===ci,img:true});
+  return '<div class="item"><span class="label">'+i+'.</span> Colour (tap) the '+ordSym(n)+' '+o.one+' from the '+side+'.'+selBlock('one',opts)+'</div>';
+}
+function gMatch(i){
+  const ns=shuffle([1,2,3,4,5,6,7,8,9,10]).slice(0,randInt(4,5)).sort((a,b)=>a-b);
+  let rows=''; ns.forEach(n=>{ const words=shuffle(ns.map(x=>({html:ordWord(x),ok:x===n}))); rows+='<div class="matchrow"><span class="sym">'+ordSym(n)+'</span> &rarr; '+selBlock('one',words)+'</div>'; });
+  return '<div class="item"><span class="label">'+i+'.</span> Match each ordinal to its word (tap the word).'+rows+'</div>';
+}
+function letterRow(L){ let r='<div class="row-objs">'; for(let k=0;k<L;k++) r+='<span class="tile">'+LETTERS[k]+'</span>'; return r+'</div>'; }
+function gWhich(i){
+  const L=randInt(6,9); const n=randInt(1,L); const side=pick(SIDES); const letter=LETTERS[idxFrom(L,n,side)];
+  return '<div class="item"><span class="label">'+i+'.</span> Which letter is '+ordSym(n)+' from the '+side+'?'+letterRow(L)+'Answer: '+txtIn('letter',letter,true)+'</div>';
+}
+function gPosition(i){
+  const L=randInt(6,9); const k=randInt(0,L-1); const side=pick(SIDES); const pos=side==='left'?k+1:L-k;
+  return '<div class="item"><span class="label">'+i+'.</span> In which position (from the '+side+') is letter '+LETTERS[k]+'?'+letterRow(L)+'Answer: '+txtIn('ord',ordSym(pos),true)+'</div>';
+}
+function gWords(i){
+  const n=randInt(1,10);
+  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+ordSym(n)+' in words. '+txtIn('ord',ordWord(n))+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+ordWord(n)+'&rdquo; in numerals. '+txtIn('ord',ordSym(n),true)+'</div>';
+}
+function gPicture(i){
+  const L=randInt(5,7); const objs=[]; for(let k=0;k<L;k++) objs.push(pickObj());
+  let row='<div class="row-objs">'; objs.forEach(o=>row+='<span class="objcap">'+img(o.cp)+'<span>'+o.one+'</span></span>'); row+='</div>';
+  const n=randInt(1,L); const side=pick(SIDES); const k=idxFrom(L,n,side); const mode=pick(['name','ord']);
+  let q;
+  if(mode==='name') q='The '+txtIn('name',objs[k].one)+' is '+ordSym(n)+' from the '+side+'.';
+  else q='The '+objs[k].one+' is '+txtIn('ord',ordSym(n),true)+' from the '+side+'.';
+  return '<div class="item"><span class="label">'+i+'.</span> Look at the picture.'+row+q+'</div>';
+}
+
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Colour the right object.', cfg.colour, gColour);
+html+=section('Match the ordinals to their words.', cfg.match, gMatch);
+html+=section('Which letter is in the position?', cfg.which, gWhich);
+html+=section('In which position is the letter?', cfg.position, gPosition);
+html+=section('Write in words or numerals.', cfg.words, gWords);
+html+=section('Look at the picture.', cfg.picture, gPicture);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  ordinal numbers 1st–10th';
+
+document.querySelectorAll('.sel-block').forEach(b=>{ const mode=b.dataset.mode; b.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(mode==='one') b.querySelectorAll('.chip').forEach(x=>{ if(x!==c) x.classList.remove('selected'); }); c.classList.toggle('selected'); })); });
+
+/* ---- marking ---- */
+function normOrd(s){ s=(s||'').toLowerCase().trim().replace(/\s+/g,' '); const wi=OWORD.indexOf(s); if(wi>0)return wi; const m=s.match(/^(\d+)(st|nd|rd|th)?$/); return m?+m[1]:NaN; }
+function normName(s){ s=(s||'').toLowerCase().trim().replace(/\s+/g,' '); if(s.length>1&&s.endsWith('s'))s=s.slice(0,-1); return s; }
+const scoreEl=document.getElementById('score');
+function setMark(inp,ok,txt){ inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove(); if(ok){inp.classList.add('correct');} else {inp.classList.add('incorrect'); const s=document.createElement('span'); s.className='correction'; s.textContent='('+txt+')'; inp.after(s);} }
+function mark(){
+  let total=0,right=0;
+  document.querySelectorAll('input.gradable').forEach(inp=>{
+    total++; const kind=inp.dataset.kind, ans=inp.dataset.answer; let ok;
+    if(kind==='ord') ok=normOrd(inp.value)===normOrd(ans);
+    else if(kind==='letter') ok=inp.value.trim().toUpperCase()===ans.trim().toUpperCase();
+    else ok=normName(inp.value)===normName(ans);
+    if(ok)right++; setMark(inp,ok,ans);
+  });
+  document.querySelectorAll('.sel-block').forEach(b=>{
+    total++; let ok=true;
+    b.querySelectorAll('.chip').forEach(c=>{ const should=c.dataset.ok==='1', sel=c.classList.contains('selected'); c.classList.remove('correct','incorrect','missed');
+      if(sel&&should)c.classList.add('correct'); else if(sel&&!should){c.classList.add('incorrect');ok=false;} else if(!sel&&should){c.classList.add('missed');ok=false;} });
+    if(ok)right++;
+  });
+  const pct=total?Math.round(right/total*100):0; const face=pct===100?' 🌟':pct>=70?' 😀':' 💪';
+  scoreEl.textContent='Score: '+right+' / '+total+'  ('+pct+'%)'+face; scoreEl.style.display='block'; scoreEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function clearAll(){ document.querySelectorAll('input.gradable').forEach(inp=>{ inp.value=''; inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove(); }); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','correct','incorrect','missed')); scoreEl.style.display='none'; }
+
+const $=id=>document.getElementById(id);
+$('f-seed').value=cfg.seed; ['colour','match','which','position','words','picture'].forEach(k=>$('f-'+k).value=cfg[k]);
+function apply(){ const p=new URLSearchParams(); p.set('seed',$('f-seed').value||'1'); ['colour','match','which','position','words','picture'].forEach(k=>p.set(k,$('f-'+k).value)); location.search=p.toString(); }
+$('b-apply').onclick=apply; $('b-random').onclick=()=>{ $('f-seed').value=Math.random().toString(36).slice(2,8); apply(); };
+$('b-submit').onclick=mark; $('b-reset').onclick=clearAll; $('b-print').onclick=()=>window.print();
+</script>
+</body>
+</html>

@@ -9,6 +9,9 @@ for young children. No build step, no dependencies — emoji pictures are bundle
 - `addition.html` — the addition worksheet generator (sums within 10): number bonds,
   picture sums, "…make…" and missing-number questions, commutative pairs, word problems,
   and an interactive colour-the-matching-sums exercise. Same seed/marking/print model.
+- `ordinals.html` — the ordinal numbers generator (1st–10th): colour the Nth object,
+  match ordinal↔word, which letter / what position from left or right, write in words and
+  numerals, and picture-position questions. Accepts "3rd", "third", or "3".
 - `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
   half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
   an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by
