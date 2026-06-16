@@ -1,0 +1,92 @@
+# `graphs.html` — picture graphs worksheet generator
+
+**File:** `graphs.html` · **Shared patterns:** [`conventions.md`](conventions.md)
+
+A seed-driven generator for **Picture Graphs** (Unit 8), built on the shared `WS` engine. Two
+exercises: **read** a picture graph and answer questions, and **build** a graph by shading cells.
+The only generator with no equations — it introduces a graph renderer and a shade-the-cells
+interaction.
+
+---
+
+## 1. Page structure
+
+- **Control panel** — collapsible `<details id="ws-panel">` titled `📊 Picture Graphs Worksheet —
+  options`, seed field, two count fields (`read`, `build`), standard buttons.
+- **Header** — `Picture Graphs`, meta line, Name/Date row.
+- **Body** — two sections (Read → Build). Empty counts hide their heading.
+
+---
+
+## 2. Exercise types & their visuals
+
+| Section (fn) | Asks | Child does | Visual |
+|--------------|------|------------|--------|
+| Read (`gRead`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph: 3–4 category rows, each a label + a row of icons; "Each ⬛ stands for 1" |
+| Build (`gBuild`) | "count each tray, shade the graph to match" | taps cells to shade each column | 3–4 columns of empty cells, each captioned with a tray of objects |
+
+**Read sub-questions** (all derived from the category counts): *count of category 1*, *more A than B*,
+*fewer B than A*, *total altogether* (numeric); *the most* and *the fewest* (tap a category word).
+Counts are `WS.helpers.distinct(k, 2, 8)` so they're all different — the max and min are unique (no
+ambiguous "most"), and every pairwise difference is non-zero.
+
+---
+
+## 3. Configuration
+
+URL params, all clamped (seed defaults to `WS.randomSeed()`):
+
+| Param | Section | Default | Range |
+|-------|---------|---------|-------|
+| `seed` | RNG seed | random | any string |
+| `read` | Read-the-graph blocks | 2 | 0–10 |
+| `build` | Build-the-graph blocks | 1 | 0–10 |
+
+---
+
+## 4. Complicated logic
+
+1. **The graph renderer.** Each category is a `.grow` flex row — a fixed-width `.glabel` and a
+   `.gicons` strip of N `<img>` — inside a bordered `.graph`. Counting questions read off the strip
+   lengths; pictures *are* the data, so no separate answer store is needed.
+2. **Most / fewest are `.sel-block`s** of category-word chips (`data-ok` on the max/min category),
+   graded all-or-nothing by `WS.markChips`.
+3. **Build-the-graph — a custom marker.** Columns are `.bg-col[data-need]`; cells are `.cell` buttons
+   wired by the page to toggle `.filled` (independent, not bottom-up). Correctness is the *count* of
+   filled cells per column, graded by an **extra** passed to `WS.mark`, one point per column:
+
+   ```javascript
+   function buildExtra(){                            // WS.mark({extras:[buildExtra]})
+     document.querySelectorAll('.bg-col').forEach(col=>{
+       const need=+col.dataset.need;
+       const filled=[...col.querySelectorAll('.cell')].filter(c=>c.classList.contains('filled'));
+       const ok = filled.length===need;
+       filled.forEach(c=>c.classList.add(ok?'correct':'incorrect'));
+       if(ok) right++; total++;
+     });
+   }
+   ```
+   `WS.clearAll(buildClear)` un-shades the cells on Clear; the verifier shades `data-need` cells per
+   column (same hook pattern as `.countn`).
+
+---
+
+## 5. Insights & gotchas
+
+- **Self-consistency ≠ correctness.** An early bug referenced `.many` on the category *wrapper*
+  (should be `.noun.many`), rendering "There are 4 more **undefined** than **undefined**." The browser
+  verifier AND the first logic-check *passed* — both compared the broken value to itself. Only the
+  rendered screenshot caught it. Lesson re-learned: eyeball the render, and have the logic-check
+  assert against an **independent** source (here: the literal noun list / `!== 'undefined'`).
+- `.gicons` wraps, so a tall category (8 icons) may span two lines — acceptable, but the bar length is
+  then less visually obvious.
+- Build cells shade light-blue on screen; on paper the child shades by hand (cells print as boxes).
+
+---
+
+## 6. Assets
+
+18 Twemoji nouns used as graph/tray icons (rabbit `1f430`, cat `1f431`, fish `1f41f`, bird `1f426`,
+duck `1f986`, bee `1f41d`, butterfly `1f98b`, apple `1f34e`, strawberry `1f353`, cookie `1f36a`, cake
+`1f370`, boat `26f5`, car `1f697`, ball `1f3c0`, star `2b50`, flag `1f6a9`, shell `1f41a`, balloon
+`1f388`). The graph frame and cells are CSS.

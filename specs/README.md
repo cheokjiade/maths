@@ -18,6 +18,7 @@ what is unique to each file.
 | [`subtraction.md`](subtraction.md) | `subtraction.html` | Subtraction generator — full requirements spec + as-built implementation notes |
 | [`addition.md`](addition.md) | `addition.html` | Addition generator (sums within 10) — ten question types incl. colour-match |
 | [`shapes.md`](shapes.md) | `shapes.html` | Shapes generator — incl. the interactive copy-the-figure grid |
+| [`graphs.md`](graphs.md) | `graphs.html` | Picture graphs — read graphs + shade-the-cells build-a-graph |
 | [`within20.md`](within20.md) | `within20.html` | Add & Subtract within 20 — bare/picture, make-a-ten, match, missing, word problems |
 | [`ordinals.md`](ordinals.md) | `ordinals.html` | Ordinal numbers generator (1st–10th) |
 | [`numbers20.md`](numbers20.md) | `numbers20.html` | Numbers-to-20 generator — count, tens/ones, words, patterns, compare, order, more/fewer |

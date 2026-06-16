@@ -23,6 +23,7 @@ const TARGETS = [
   { name: 'numbers20',   file: 'numbers20.html', params: 'seed=verify' },
   { name: 'numbers10',   file: 'numbers10.html', params: 'seed=verify' },
   { name: 'within20',    file: 'within20.html', params: 'seed=verify' },
+  { name: 'graphs',      file: 'graphs.html',   params: 'seed=verify&read=2&build=1' },
 ];
 
 // Launch installed Chrome/Edge without downloading a browser.
@@ -89,6 +90,12 @@ async function drive(page, url, probe) {
     const need = +(await blk.getAttribute('data-need'));
     const chips = await blk.$$('.chip');
     for (let k = 0; k < need && k < chips.length; k++) await chips[k].click();
+  }
+  // build-a-graph columns: shade `need` cells
+  for (const col of await page.$$('.bg-col')) {
+    const need = +(await col.getAttribute('data-need'));
+    const cells = await col.$$('.cell');
+    for (let k = 0; k < need && k < cells.length; k++) await cells[k].click();
   }
   const plan = await page.evaluate(gridPlan);
   const gids = Object.keys(plan);

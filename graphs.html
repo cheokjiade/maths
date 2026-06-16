@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Picture Graphs Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* picture-graph-specific components */
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
+  .graph { border:2px solid var(--ink); display:inline-block; margin:6px 0; }
+  .grow { display:flex; align-items:center; border-bottom:1px solid #999; }
+  .grow:last-child { border-bottom:none; }
+  .glabel { width:110px; padding:5px 8px; border-right:1px solid #999; font-size:13pt; font-weight:bold; }
+  .gicons { display:flex; gap:3px; padding:5px 8px; flex-wrap:wrap; min-height:30px; align-items:center; }
+  .gicons img { width:26px; height:26px; }
+  .gkey { font-size:11pt; color:#444; margin:6px 0; display:flex; align-items:center; gap:6px; }
+  .gkey img { width:22px; height:22px; }
+  .subq { margin:6px 0; }
+  /* build-the-graph */
+  .buildgraph { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; margin:8px 0; }
+  .bg-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .bg-cells { display:flex; flex-direction:column-reverse; border:1.5px solid #888; }
+  .cell { width:30px; height:22px; border:1px solid #ccc; background:#fff; cursor:pointer; padding:0; }
+  .cell.filled { background:#bcd6f6; }
+  .cell.correct { background:#bbf7d0; } .cell.incorrect { background:#fecaca; }
+  .bg-cap { text-align:center; font-size:11pt; }
+  .bg-cap .tray { display:flex; flex-wrap:wrap; gap:2px; justify-content:center; max-width:90px; }
+  .bg-cap img { width:20px; height:20px; }
+  .chip.namechip { border-radius:10px; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>📊 Picture Graphs Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Read a picture graph and answer questions (count, more/fewer, total, most/least).">Read graphs <input type="number" id="f-read" min="0" max="10"></label>
+      <label data-tip="Count the objects in each tray, then shade the graph to match.">Build a graph <input type="number" id="f-build" min="0" max="10"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Read the graph and type the answers; for "build a graph", tap cells to shade each column. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Picture Graphs</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 📊⭐</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  read:WS.clamp(WS.toInt(WS.Q.get('read'),2),0,10), build:WS.clamp(WS.toInt(WS.Q.get('build'),1),0,10) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const NOUNS=[
+  {cp:'1f430',one:'rabbit',many:'rabbits'},{cp:'1f431',one:'cat',many:'cats'},{cp:'1f41f',one:'fish',many:'fish'},
+  {cp:'1f426',one:'bird',many:'birds'},{cp:'1f986',one:'duck',many:'ducks'},{cp:'1f41d',one:'bee',many:'bees'},
+  {cp:'1f98b',one:'butterfly',many:'butterflies'},{cp:'1f34e',one:'apple',many:'apples'},{cp:'1f353',one:'strawberry',many:'strawberries'},
+  {cp:'1f36a',one:'cookie',many:'cookies'},{cp:'1f370',one:'cake',many:'cakes'},{cp:'26f5',one:'boat',many:'boats'},
+  {cp:'1f697',one:'car',many:'cars'},{cp:'1f3c0',one:'ball',many:'balls'},{cp:'2b50',one:'star',many:'stars'},
+  {cp:'1f6a9',one:'flag',many:'flags'},{cp:'1f41a',one:'shell',many:'shells'},{cp:'1f388',one:'balloon',many:'balloons'},
+];
+const used=new Set();
+function pickNoun(){ const av=NOUNS.filter(n=>!used.has(n.cp)); const n=pick(av.length?av:NOUNS); used.add(n.cp); return n; }
+const img=cp=>'<img src="'+TW(cp)+'" alt="">';
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+let uid=0;
+const numIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip namechip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<span class="sel-block" data-mode="one" id="'+id+'"><span class="chips">'+chips+'</span></span>'; }
+
+/* ---- read a picture graph ---- */
+function gRead(i){
+  const k=pick([3,4]); const counts=distinct(k,2,8); const cats=[]; for(let j=0;j<k;j++) cats.push({noun:pickNoun(),count:counts[j]});
+  let rows=''; cats.forEach(c=>{ let icons=''; for(let z=0;z<c.count;z++) icons+=img(c.noun.cp); rows+='<div class="grow"><span class="glabel">'+cap(c.noun.one)+'</span><span class="gicons">'+icons+'</span></div>'; });
+  const graph='<div class="graph">'+rows+'</div><div class="gkey">Each '+img(cats[0].noun.cp)+' stands for 1.</div>';
+  const total=cats.reduce((s,c)=>s+c.count,0);
+  const maxC=cats.reduce((a,b)=>b.count>a.count?b:a), minC=cats.reduce((a,b)=>b.count<a.count?b:a);
+  const c0=cats[0];
+  let qs='';
+  qs+='<div class="subq">There are '+numIn(c0.count)+' '+c0.noun.many+'.</div>';
+  qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' more '+maxC.noun.many+' than '+minC.noun.many+'.</div>';
+  qs+='<div class="subq">There are '+numIn(maxC.count-minC.count)+' fewer '+minC.noun.many+' than '+maxC.noun.many+'.</div>';
+  qs+='<div class="subq">There are '+numIn(total)+' altogether.</div>';
+  qs+='<div class="subq">There are the most '+selBlock(shuffle(cats.map(c=>({html:c.noun.many,ok:c===maxC}))))+'.</div>';
+  qs+='<div class="subq">There are the fewest '+selBlock(shuffle(cats.map(c=>({html:c.noun.many,ok:c===minC}))))+'.</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Read the graph, then fill in the blanks (tap a word for the most/fewest).'+graph+qs+'</div>';
+}
+
+/* ---- build a graph (shade cells) ---- */
+function gBuild(i){
+  const k=pick([3,4]); const cols=[]; for(let j=0;j<k;j++) cols.push({noun:pickNoun(),count:randInt(2,6)});
+  const maxRows=Math.max.apply(null,cols.map(c=>c.count))+1;
+  let body='<div class="buildgraph">';
+  cols.forEach((c,ci)=>{ let cells=''; for(let r=0;r<maxRows;r++) cells+='<button type="button" class="cell"></button>';
+    let tray=''; for(let z=0;z<c.count;z++) tray+=img(c.noun.cp);
+    body+='<div class="bg-col" data-need="'+c.count+'"><div class="bg-cells">'+cells+'</div><div class="bg-cap"><div class="tray">'+tray+'</div>'+cap(c.noun.one)+'</div></div>'; });
+  body+='</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Count the objects in each tray, then shade the graph to match (tap cells).'+body+'</div>';
+}
+
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Read the picture graphs.', cfg.read, gRead);
+html+=section('Complete the graphs.', cfg.build, gBuild);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  picture graphs';
+
+/* ---- build-graph: cell toggling + custom marker ---- */
+document.querySelectorAll('.bg-cells .cell').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('filled')));
+function buildExtra(){
+  let total=0, right=0;
+  document.querySelectorAll('.bg-col').forEach(col=>{
+    total++;
+    const need=+col.dataset.need;
+    const cells=[...col.querySelectorAll('.cell')];
+    const filled=cells.filter(c=>c.classList.contains('filled'));
+    const ok=filled.length===need;
+    cells.forEach(c=>c.classList.remove('correct','incorrect'));
+    filled.forEach(c=>c.classList.add(ok?'correct':'incorrect'));
+    if(ok) right++;
+  });
+  return { total, right };
+}
+function buildClear(){ document.querySelectorAll('.bg-cells .cell').forEach(c=>c.classList.remove('filled','correct','incorrect')); }
+
+/* ---- wiring (shared engine) ---- */
+WS.wireChips();
+WS.wirePanel(cfg, ['read','build'], { mark: () => WS.mark({ extras: [buildExtra] }), clear: () => WS.clearAll(buildClear) });
+</script>
+</body>
+</html>

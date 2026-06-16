@@ -20,6 +20,8 @@ for young children. No build step, no dependencies — emoji pictures are bundle
   what-comes-next, and count-and-compare.
 - `within20.html` — add & subtract within 20 (Unit 7): bare & picture equations for both
   operations, make-a-ten, colour-match, missing-number, and boxed word problems.
+- `graphs.html` — picture graphs (Unit 8): read a picture graph (count, more/fewer, total,
+  most/least) and an interactive build-a-graph (shade cells to match tray counts).
 - `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
   half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
   an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by
