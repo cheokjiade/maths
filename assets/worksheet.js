@@ -93,19 +93,70 @@ window.WS = (function () {
     el.style.display='block';
     el.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
+  /* drag-to-order: each .dslot[data-answer] is correct iff it holds the .dtile with that value */
+  function markDragOrder(){
+    let total=0, right=0;
+    document.querySelectorAll('.dslot[data-answer]').forEach(slot=>{
+      total++;
+      const tile=slot.querySelector('.dtile');
+      const ans=slot.getAttribute('data-answer');
+      const ok = !!tile && tile.getAttribute('data-val')===ans;
+      slot.classList.remove('correct','incorrect'); slot.removeAttribute('data-correct');
+      if(ok){ slot.classList.add('correct'); right++; }
+      else { slot.classList.add('incorrect'); slot.setAttribute('data-correct', ans); }
+    });
+    return { total, right };
+  }
   /* opts: { skip:(inp)=>bool, extras:[ ()=>({total,right}) ] } */
   function mark(opts){
     opts=opts||{}; let total=0, right=0;
     const a=markInputs(opts.skip); total+=a.total; right+=a.right;
     const c=markChips(); total+=c.total; right+=c.right;
+    const d=markDragOrder(); total+=d.total; right+=d.right;
     (opts.extras||[]).forEach(fn=>{ const e=fn()||{total:0,right:0}; total+=e.total; right+=e.right; });
     showScore(right, total);
   }
   function clearAll(extra){
     document.querySelectorAll('input.gradable').forEach(inp=>{ inp.value=''; inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old) old.remove(); });
     document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','correct','incorrect','missed'));
+    document.querySelectorAll('.dorder').forEach(o=>{ const src=o.querySelector('.dsource');
+      o.querySelectorAll('.dslot .dtile').forEach(t=>{ if(src) src.appendChild(t); });
+      o.querySelectorAll('.dslot').forEach(s=>{ s.classList.remove('correct','incorrect'); s.removeAttribute('data-correct'); }); });
     if(extra) extra();
     const el=document.getElementById('score'); if(el) el.style.display='none';
+  }
+
+  /* drag/tap-to-order interaction: tiles in a .dsource move into .dslot drop boxes (tap-to-place or drag).
+     No library, pointer events (mouse + touch), file://-safe. Marking is automatic in WS.mark. */
+  function enableDragOrder(){
+    let selected=null, drag=null;
+    const orderOf=el=>el.closest('.dorder');
+    function clearSel(){ if(selected) selected.classList.remove('dsel'); selected=null; }
+    function place(tile, slot){ const o=orderOf(tile); if(orderOf(slot)!==o) return; const occ=slot.querySelector('.dtile'); const src=o.querySelector('.dsource'); if(occ && occ!==tile) src.appendChild(occ); slot.appendChild(tile); clearSel(); }
+    function toSource(tile){ orderOf(tile).querySelector('.dsource').appendChild(tile); clearSel(); }
+
+    document.querySelectorAll('.dorder .dtile').forEach(t=>{
+      t.addEventListener('click', ()=>{ if(t._dragged) return; if(selected===t){ clearSel(); return; } clearSel(); selected=t; t.classList.add('dsel'); });
+      t.addEventListener('pointerdown', startDrag);
+    });
+    document.querySelectorAll('.dorder .dslot').forEach(s=>{
+      s.addEventListener('click', ()=>{ if(selected){ place(selected, s); } else { const occ=s.querySelector('.dtile'); if(occ) toSource(occ); } });
+    });
+
+    function startDrag(e){ if(e.pointerType==='mouse' && e.button!==0) return; const tile=e.currentTarget; const r=tile.getBoundingClientRect();
+      drag={ tile, dx:e.clientX-r.left, dy:e.clientY-r.top, w:r.width, h:r.height, sx:e.clientX, sy:e.clientY, moved:false };
+      try{ tile.setPointerCapture(e.pointerId); }catch(_){}
+      tile.addEventListener('pointermove', onMove); tile.addEventListener('pointerup', onUp); }
+    function onMove(e){ if(!drag) return;
+      if(!drag.moved){ if(Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) < 5) return;
+        drag.moved=true; const t=drag.tile; t.classList.add('dragging'); t.style.position='fixed'; t.style.width=drag.w+'px'; t.style.height=drag.h+'px'; t.style.zIndex='2000'; t.style.pointerEvents='none'; }
+      drag.tile.style.left=(e.clientX-drag.dx)+'px'; drag.tile.style.top=(e.clientY-drag.dy)+'px'; }
+    function onUp(e){ if(!drag) return; const t=drag.tile; t.removeEventListener('pointermove',onMove); t.removeEventListener('pointerup',onUp);
+      if(drag.moved){ const el=document.elementFromPoint(e.clientX,e.clientY); t.classList.remove('dragging'); t.style.cssText='';
+        const slot=el&&el.closest?el.closest('.dslot'):null; const src=el&&el.closest?el.closest('.dsource'):null; const o=orderOf(t);
+        if(slot && orderOf(slot)===o) place(t,slot); else if(src && orderOf(src)===o) toSource(t);
+        t._dragged=true; setTimeout(()=>{ t._dragged=false; },0); }
+      drag=null; }
   }
 
   /* ---- option tooltips (hover on desktop, tap on touch) ---- */
@@ -151,5 +202,6 @@ window.WS = (function () {
   }
 
   return { makeRng, helpers, randomSeed, Q, clamp, toInt, NUMWORD, parseNum, addKind,
-           setMark, markInputs, markChips, wireChips, showScore, mark, clearAll, wirePanel, tooltips };
+           setMark, markInputs, markChips, wireChips, showScore, mark, clearAll, wirePanel, tooltips,
+           enableDragOrder };
 })();

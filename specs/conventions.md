@@ -115,6 +115,13 @@ This is the shared interface the verifier depends on. `WS.mark(opts)` tallies th
 checkboxes. Each block is **one** point, all-or-nothing: `.correct` (selected & right), `.incorrect`
 (selected & wrong), `.missed` (unselected & should be).
 
+**(b2) Drag-to-order** — a `.dorder` block with draggable `.dtile[data-val]` tiles in a `.dsource`
+pool and `.dslot[data-answer]` drop boxes. `WS.enableDragOrder()` wires both **tap-to-place** (tap a
+tile, tap a slot) and **pointer drag** (mouse + touch, no library, `file://`-safe). `WS.mark()` grades
+it automatically — each slot is one point, correct iff it holds the tile whose value equals its
+`data-answer`; wrong slots show `(answer)`. `WS.clearAll()` returns the tiles. Used by the "Order the
+numbers" sections of `numbers20`/`numbers100`.
+
 **(c) Custom markers** — pass `extras: [fn, …]` where each `fn` returns `{total, right}` and does its
 own painting; use `skip: inp => …` to exclude inputs the extras handle. Shapes uses this for the
 order-independent **compose** pair and the copy-the-figure **grid** (segments matched as unordered

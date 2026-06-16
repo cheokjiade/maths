@@ -116,9 +116,10 @@ function gCompare(i){ const K=pick([2,2,5]); const set=distinct(K,5,20);
   const instr= K===2 ? 'Tick the '+mode+' number.' : 'Colour the '+(mode==='greater'?'greatest':'smallest')+' number.';
   return '<div class="item"><span class="label">'+i+'.</span> '+instr+selBlock('one',opts)+'</div>'; }
 function gOrder(i){ const set=distinct(4,5,20); const up=rng()<0.5; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
-  let s='<div class="setline">'+set.map(x=>'<span class="setnum">'+x+'</span>').join('')+'</div>';
-  let blanks='<div class="seq">'+sorted.map((v,k)=>seqInput(v)+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('')+'</div>';
-  return '<div class="item"><span class="label">'+i+'.</span> Arrange the numbers from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'+s+blanks+'</div>'; }
+  const tiles=shuffle(set).map(x=>'<span class="dtile" data-val="'+x+'">'+x+'</span>').join('');
+  const slots=sorted.map((v,k)=>'<span class="dslot" data-answer="'+v+'"></span>'+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('');
+  return '<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the numbers into order, from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'
+    +'<div class="dorder"><div class="dsource">'+tiles+'</div><div class="dslots">'+slots+'</div></div></div>'; }
 function gMF(i){ let a=randInt(6,13), b=randInt(4,12); while(a===b){ b=randInt(4,12); }
   const big=Math.max(a,b), small=Math.min(a,b); const A=pickObj(), B=pickObj();
   const pic='<div class="qrow" style="align-items:flex-start;"><div class="pic-box">'+grp(A.cp,big)+'</div><div class="pic-box">'+grp(B.cp,small)+'</div></div>';
@@ -140,8 +141,9 @@ html+=section('More and fewer.', cfg.mf, gMF);
 document.getElementById('sheet').innerHTML=html;
 document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  numbers to 20';
 
-/* ---- wiring (shared engine; numeric marking + select blocks) ---- */
+/* ---- wiring (shared engine; numeric marking + select blocks + drag-order) ---- */
 WS.wireChips();
+WS.enableDragOrder();
 WS.wirePanel(cfg, ['count','tens','words','match','pattern','compare','order','mf'], { mark: () => WS.mark(), clear: () => WS.clearAll() });
 </script>
 </body>

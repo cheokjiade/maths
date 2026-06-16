@@ -67,6 +67,18 @@ input.incorrect { color:var(--wrong); border-color:var(--wrong); }
 
 .footer { text-align:center; font-size:11pt; margin-top:26px; color:#555; }
 
+/* drag / tap-to-order (shared interaction; WS.enableDragOrder) */
+.dorder { margin:6px 0; }
+.dsource { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0; min-height:46px; padding:5px; border:1px dashed #bbb; border-radius:6px; }
+.dslots { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0 22px; }
+.dtile { display:inline-flex; align-items:center; justify-content:center; min-width:46px; height:40px; padding:0 8px; border:2px solid var(--ink); border-radius:8px; background:#eef3fb; font-weight:bold; font-size:18pt; cursor:grab; user-select:none; touch-action:none; }
+.dtile.dsel { background:#fde68a; }
+.dtile.dragging { cursor:grabbing; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+.dslot { position:relative; min-width:50px; height:48px; border:2px solid var(--ink); border-radius:6px; display:inline-flex; align-items:center; justify-content:center; background:#fff; }
+.dslot .dtile { border:none; background:transparent; min-width:0; box-shadow:none; }
+.dslot.correct { border-color:var(--right); } .dslot.incorrect { border-color:var(--wrong); }
+.dslot.incorrect::after { content:"(" attr(data-correct) ")"; position:absolute; bottom:-17px; left:0; right:0; text-align:center; font-size:10pt; color:var(--wrong); font-weight:bold; font-family:Verdana,sans-serif; }
+
 @media print {
   body { padding:0; }
   .no-print { display:none !important; }
@@ -74,4 +86,7 @@ input.incorrect { color:var(--wrong); border-color:var(--wrong); }
   .correction { display:none; }
   .chip.selected, .chip.correct, .chip.incorrect { background:#fff; border-color:var(--ink); }
   .chip.missed { border-style:solid; }
+  .dtile { cursor:default; } .dsource { border-style:solid; }
+  .dslot.correct, .dslot.incorrect { border-color:var(--ink); }
+  .dslot.incorrect::after { display:none; }
 }

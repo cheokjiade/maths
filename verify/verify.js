@@ -98,6 +98,14 @@ async function drive(page, url, probe) {
     const cells = await col.$$('.cell');
     for (let k = 0; k < need && k < cells.length; k++) await cells[k].click();
   }
+  // drag/tap-to-order: tap the matching tile, then its slot
+  for (const order of await page.$$('.dorder')) {
+    for (const slot of await order.$$('.dslot')) {
+      const ans = await slot.getAttribute('data-answer');
+      const tile = await order.$(`.dsource .dtile[data-val="${ans}"]`);
+      if (tile) { await tile.click(); await slot.click(); }
+    }
+  }
   const plan = await page.evaluate(gridPlan);
   const gids = Object.keys(plan);
   for (const gid of gids) {
