@@ -20,6 +20,7 @@ const TARGETS = [
   { name: 'shapes',      file: 'shapes.html',
     params: 'seed=verify&name=2&match=1&count=1&group=1&compose=1&object=1&grid=1&draw=1&part=1' },
   { name: 'ordinals',    file: 'ordinals.html', params: 'seed=verify' },
+  { name: 'numbers20',   file: 'numbers20.html', params: 'seed=verify' },
 ];
 
 // Launch installed Chrome/Edge without downloading a browser.

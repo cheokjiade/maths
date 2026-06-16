@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numbers to 20 Worksheet Generator</title>
+<style>
+  @page { size:A4; margin:16mm 14mm; }
+  :root{ --ink:#000; --right:#137a13; --wrong:#c0142c; --accent:#2563eb; }
+  body{ font-family:"Comic Sans MS","Century Gothic",Verdana,sans-serif; font-size:17pt; color:var(--ink); line-height:1.7; max-width:880px; margin:0 auto; padding:20px; }
+  .panel{ background:#f3f4f6; border:1px solid #cbd0d6; border-radius:10px; padding:14px 16px; margin-bottom:22px; font-family:Verdana,sans-serif; font-size:11pt; line-height:1.5; }
+  .panel h3{ margin:0 0 10px; font-size:13pt; }
+  .panel .fields{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; }
+  .panel label{ display:flex; flex-direction:column; font-weight:bold; gap:3px; }
+  .panel input[type=text],.panel input[type=number]{ font-size:11pt; padding:4px 6px; border:1px solid #aaa; border-radius:5px; }
+  .panel input[type=number]{ width:56px; } .panel input[type=text]{ width:120px; }
+  .panel .btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .panel button{ font-size:11pt; padding:7px 14px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; font-weight:bold; }
+  .panel button.primary{ background:var(--accent); color:#fff; border-color:var(--accent);} .panel button.go{ background:#16a34a; color:#fff; border-color:#16a34a;}
+  .panel .hint{ font-weight:normal; color:#555; font-size:10pt; margin-top:8px; }
+  .score{ display:none; font-family:Verdana,sans-serif; font-size:15pt; font-weight:bold; margin:4px 0 18px; padding:8px 14px; border-radius:8px; background:#fffbe6; border:1px solid #e6d98a; }
+  h1{ text-align:center; border-bottom:3px solid var(--ink); padding-bottom:8px; margin-bottom:6px; font-size:24pt; }
+  .meta-line{ text-align:center; font-size:10pt; color:#666; margin:-2px 0 14px; font-family:Verdana,sans-serif; }
+  .name-row{ display:flex; justify-content:space-between; font-size:14pt; margin-bottom:22px; }
+  .name-row span{ border-bottom:1px solid var(--ink); display:inline-block; min-width:200px; }
+  h2{ font-size:18pt; margin-top:24px; margin-bottom:12px; }
+  .item{ margin-bottom:18px; page-break-inside:avoid; }
+  .label{ font-weight:bold; margin-right:6px; }
+  .qrow{ display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+
+  .field{ position:relative; display:inline-flex; align-items:center; }
+  input.ans{ font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:120px; }
+  input.ans.short{ width:60px; }
+  input.correct{ color:var(--right); border-color:var(--right);} input.incorrect{ color:var(--wrong); border-color:var(--wrong);}
+  .correction{ color:var(--wrong); font-size:12pt; margin-left:4px; font-weight:bold; }
+
+  .pic-box{ border:1.5px solid #888; border-radius:6px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; max-width:60%; }
+  .obj{ width:30px; height:30px; }
+  .grp{ display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .tenblock{ display:inline-flex; flex-wrap:wrap; width:170px; gap:3px; padding:5px; border:1.5px dashed #999; border-radius:6px; }
+
+  .seq{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .seqbox{ width:50px; height:50px; border:2px solid var(--ink); border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:18pt; }
+  .seqbox input{ width:100%; height:100%; border:none; text-align:center; font:inherit; font-size:18pt; background:transparent; }
+  .arrow{ font-size:18pt; }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .chip{ font-family:inherit; font-size:16pt; padding:6px 16px; border:2px solid var(--ink); border-radius:22px; background:#fff; cursor:pointer; min-width:48px; text-align:center; }
+  .chip.box{ border-radius:8px; }
+  .chip.selected{ background:#fde68a; } .chip.correct{ background:#bbf7d0; border-color:var(--right);} .chip.incorrect{ background:#fecaca; border-color:var(--wrong);} .chip.missed{ border-style:dashed; border-color:var(--right); }
+  .matchrow{ display:flex; align-items:center; gap:12px; margin:6px 0; flex-wrap:wrap; }
+  .matchrow .num{ font-weight:bold; min-width:36px; font-size:18pt; }
+  .setline{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0; }
+  .setnum{ border:2px solid #888; border-radius:6px; padding:4px 12px; font-weight:bold; }
+
+  .footer{ text-align:center; font-size:11pt; margin-top:26px; color:#555; }
+  @media print{ body{ padding:0; } .no-print{ display:none !important; } input.correct,input.incorrect{ color:var(--ink); border-color:var(--ink);} .correction{ display:none; } .chip.selected,.chip.correct,.chip.incorrect{ background:#fff; border-color:var(--ink);} .chip.missed{ border-style:solid; } }
+</style>
+</head>
+<body>
+<div class="panel no-print">
+  <div style="margin-bottom:10px;"><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:bold;">&larr; All worksheets</a></div>
+  <h3>🔢 Numbers to 20 Worksheet Generator</h3>
+  <div class="fields">
+    <label>Seed <input type="text" id="f-seed"></label>
+    <label>Count <input type="number" id="f-count" min="0" max="20"></label>
+    <label>Tens &amp; ones <input type="number" id="f-tens" min="0" max="20"></label>
+    <label>Words/numerals <input type="number" id="f-words" min="0" max="20"></label>
+    <label>Match <input type="number" id="f-match" min="0" max="10"></label>
+    <label>Patterns <input type="number" id="f-pattern" min="0" max="20"></label>
+    <label>Compare <input type="number" id="f-compare" min="0" max="20"></label>
+    <label>Order <input type="number" id="f-order" min="0" max="20"></label>
+    <label>More/fewer <input type="number" id="f-mf" min="0" max="20"></label>
+  </div>
+  <div class="btns">
+    <button class="go" id="b-apply">Generate</button>
+    <button id="b-random">🎲 Random seed</button>
+    <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+    <button id="b-reset">Clear answers</button>
+    <button id="b-print">🖨️ Print</button>
+  </div>
+  <div class="hint">Type digits or words (e.g. 17 or "seventeen"); tap numbers/words to select. Same seed + settings = same worksheet.</div>
+</div>
+<div class="score" id="score"></div>
+<h1>Numbers to 20</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 🔢⭐</div>
+
+<script>
+"use strict";
+function xmur3(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=(h<<13)|(h>>>19);}return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return (h^=h>>>16)>>>0;};}
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+const Q=new URLSearchParams(location.search);
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v)); const toInt=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
+const cfg={ seed:Q.get('seed')||'1',
+  count:clamp(toInt(Q.get('count'),3),0,20), tens:clamp(toInt(Q.get('tens'),3),0,20),
+  words:clamp(toInt(Q.get('words'),4),0,20), match:clamp(toInt(Q.get('match'),1),0,10),
+  pattern:clamp(toInt(Q.get('pattern'),3),0,20), compare:clamp(toInt(Q.get('compare'),3),0,20),
+  order:clamp(toInt(Q.get('order'),2),0,20), mf:clamp(toInt(Q.get('mf'),3),0,20) };
+const rng=mulberry32(xmur3(cfg.seed)());
+const randInt=(lo,hi)=>lo+Math.floor(rng()*(hi-lo+1));
+const pick=a=>a[Math.floor(rng()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function distinct(k,lo,hi){ const s=new Set(); let guard=0; while(s.size<k && guard++<400) s.add(randInt(lo,hi)); return [...s]; }
+
+const NUMWORD=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+const TW=cp=>'assets/twemoji/'+cp+'.svg';
+const OBJS=[
+  {cp:'1f34e',many:'apples'},{cp:'1f388',many:'balloons'},{cp:'1f986',many:'ducks'},{cp:'1f41f',many:'fish'},
+  {cp:'1f36a',many:'cookies'},{cp:'1f353',many:'strawberries'},{cp:'1f41d',many:'bees'},{cp:'1f426',many:'birds'},
+  {cp:'1f98b',many:'butterflies'},{cp:'2b50',many:'stars'},{cp:'270f',many:'pencils'},{cp:'1f697',many:'cars'},
+  {cp:'1f370',many:'cakes'},{cp:'26f5',many:'boats'},{cp:'1f3c0',many:'balls'},{cp:'1f41a',many:'shells'},
+  {cp:'1f6a9',many:'flags'},{cp:'1f431',many:'cats'},{cp:'1f430',many:'rabbits'},{cp:'1f41e',many:'beetles'},
+];
+const usedObj=new Set();
+function pickObj(){ const av=OBJS.filter(o=>!usedObj.has(o.cp)); const o=pick(av.length?av:OBJS); if(av.length<2) usedObj.clear(); usedObj.add(o.cp); return o; }
+const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
+const grp=(cp,n)=>{ let s=''; for(let i=0;i<n;i++) s+=img(cp); return '<span class="grp">'+s+'</span>'; };
+
+let uid=0;
+const ansIn=(answer,short)=>'<span class="field"><input class="ans'+(short?' short':'')+' gradable" data-answer="'+answer+'" type="text" autocomplete="off"></span>';
+const seqInput=answer=>'<span class="seqbox"><input class="ans gradable" data-answer="'+answer+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(mode,opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip box" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="sel-block" data-mode="'+mode+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+
+/* ---- generators ---- */
+function gCount(i){ const o=pickObj(); const N=randInt(11,20);
+  return '<div class="item"><span class="label">'+i+'.</span> Count and write the number.<div class="qrow"><div class="pic-box">'+grp(o.cp,N)+'</div><div>There are '+ansIn(N,true)+' '+o.many+'.</div></div></div>'; }
+function gTens(i){ const ones=randInt(1,9); const N=10+ones; const o=pickObj();
+  const pic='<div class="qrow"><div class="tenblock">'+grp(o.cp,10)+'</div><span style="font-size:20pt;">and</span><div class="pic-box" style="max-width:30%;">'+grp(o.cp,ones)+'</div></div>';
+  const eq= rng()<0.5 ? '10 and '+ones+' make '+ansIn(N,true) : '10 + '+ones+' = '+ansIn(N,true);
+  return '<div class="item"><span class="label">'+i+'.</span> Fill in the number.'+pic+'<div style="margin-top:6px;font-size:20pt;">'+eq+'</div></div>'; }
+function gWords(i){ const n=randInt(11,20);
+  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+ansIn(NUMWORD[n])+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+NUMWORD[n]+'&rdquo; in numerals. '+ansIn(n,true)+'</div>'; }
+function gMatch(i){ const nums=distinct(4,11,20); let rows='';
+  nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:NUMWORD[x],ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock('one',opts)+'</div>'; });
+  return '<div class="item"><span class="label">'+i+'.</span> Match each number to its word (tap the word).'+rows+'</div>'; }
+function gPattern(i){ const s=pick([1,1,2,-1,-2]); const len=5; let start;
+  if(s>0) start=randInt(0,20-s*(len-1)); else start=randInt(-s*(len-1),20);
+  const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
+  // blank 1-2 cells
+  const nblank=rng()<0.5?1:2; const idxs=shuffle([0,1,2,3,4]).slice(0,nblank);
+  // avoid blanking the very first cell when possible so there's a clue
+  if(idxs.includes(0) && nblank<len){ /* keep, still solvable from step */ }
+  let seq='<div class="seq">';
+  for(let k=0;k<len;k++){ seq+= idxs.includes(k)? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; }
+  seq+='</div>';
+  const title= idxs.every(x=>x>=len-nblank)?'What number comes next?':'Fill in the missing numbers.';
+  return '<div class="item"><span class="label">'+i+'.</span> '+title+seq+'</div>'; }
+function gCompare(i){ const K=pick([2,2,5]); const set=distinct(K,5,20);
+  const mode=pick(['greater','smaller']); const target= mode==='greater'?Math.max(...set):Math.min(...set);
+  const opts=set.map(x=>({html:''+x,ok:x===target}));
+  const instr= K===2 ? 'Tick the '+mode+' number.' : 'Colour the '+(mode==='greater'?'greatest':'smallest')+' number.';
+  return '<div class="item"><span class="label">'+i+'.</span> '+instr+selBlock('one',opts)+'</div>'; }
+function gOrder(i){ const set=distinct(4,5,20); const up=rng()<0.5; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
+  let s='<div class="setline">'+set.map(x=>'<span class="setnum">'+x+'</span>').join('')+'</div>';
+  let blanks='<div class="seq">'+sorted.map((v,k)=>seqInput(v)+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('')+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Arrange the numbers from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'+s+blanks+'</div>'; }
+function gMF(i){ let a=randInt(6,13), b=randInt(4,12); while(a===b){ b=randInt(4,12); }
+  const big=Math.max(a,b), small=Math.min(a,b); const A=pickObj(), B=pickObj();
+  const pic='<div class="qrow" style="align-items:flex-start;"><div class="pic-box">'+grp(A.cp,big)+'</div><div class="pic-box">'+grp(B.cp,small)+'</div></div>';
+  const sentence= rng()<0.5
+    ? 'There are '+ansIn(big-small,true)+' more '+A.many+' than '+B.many+'.'
+    : 'There are '+ansIn(big-small,true)+' fewer '+B.many+' than '+A.many+'.';
+  return '<div class="item"><span class="label">'+i+'.</span> Fill in the blank.'+pic+'<div style="margin-top:6px;">'+sentence+'</div></div>'; }
+
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Count and write the numbers.', cfg.count, gCount);
+html+=section('Tens and ones.', cfg.tens, gTens);
+html+=section('Write in words or numerals.', cfg.words, gWords);
+html+=section('Match numbers to words.', cfg.match, gMatch);
+html+=section('Number patterns.', cfg.pattern, gPattern);
+html+=section('Compare the numbers.', cfg.compare, gCompare);
+html+=section('Order the numbers.', cfg.order, gOrder);
+html+=section('More and fewer.', cfg.mf, gMF);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  numbers to 20';
+
+document.querySelectorAll('.sel-block').forEach(b=>{ const mode=b.dataset.mode; b.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ if(mode==='one') b.querySelectorAll('.chip').forEach(x=>{ if(x!==c) x.classList.remove('selected'); }); c.classList.toggle('selected'); })); });
+
+/* ---- marking ---- */
+function parseNum(s){ s=(s||'').toLowerCase().trim().replace(/\s+/g,' '); if(s==='')return NaN; if(/^\d+$/.test(s))return +s; const i=NUMWORD.indexOf(s); return i>=0?i:NaN; }
+const scoreEl=document.getElementById('score');
+function setMark(inp,ok,txt){ inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove(); if(ok){inp.classList.add('correct');} else {inp.classList.add('incorrect'); const s=document.createElement('span'); s.className='correction'; s.textContent='('+txt+')'; inp.after(s);} }
+function mark(){
+  let total=0,right=0;
+  document.querySelectorAll('input.gradable').forEach(inp=>{ total++; const ok=parseNum(inp.value)===parseNum(inp.dataset.answer); if(ok)right++; setMark(inp,ok,inp.dataset.answer); });
+  document.querySelectorAll('.sel-block').forEach(b=>{ total++; let ok=true;
+    b.querySelectorAll('.chip').forEach(c=>{ const should=c.dataset.ok==='1', sel=c.classList.contains('selected'); c.classList.remove('correct','incorrect','missed');
+      if(sel&&should)c.classList.add('correct'); else if(sel&&!should){c.classList.add('incorrect');ok=false;} else if(!sel&&should){c.classList.add('missed');ok=false;} });
+    if(ok)right++; });
+  const pct=total?Math.round(right/total*100):0; const face=pct===100?' 🌟':pct>=70?' 😀':' 💪';
+  scoreEl.textContent='Score: '+right+' / '+total+'  ('+pct+'%)'+face; scoreEl.style.display='block'; scoreEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function clearAll(){ document.querySelectorAll('input.gradable').forEach(inp=>{ inp.value=''; inp.classList.remove('correct','incorrect'); const old=inp.parentNode.querySelector('.correction'); if(old)old.remove(); }); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','correct','incorrect','missed')); scoreEl.style.display='none'; }
+
+const $=id=>document.getElementById(id);
+$('f-seed').value=cfg.seed; ['count','tens','words','match','pattern','compare','order','mf'].forEach(k=>$('f-'+k).value=cfg[k]);
+function apply(){ const p=new URLSearchParams(); p.set('seed',$('f-seed').value||'1'); ['count','tens','words','match','pattern','compare','order','mf'].forEach(k=>p.set(k,$('f-'+k).value)); location.search=p.toString(); }
+$('b-apply').onclick=apply; $('b-random').onclick=()=>{ $('f-seed').value=Math.random().toString(36).slice(2,8); apply(); };
+$('b-submit').onclick=mark; $('b-reset').onclick=clearAll; $('b-print').onclick=()=>window.print();
+</script>
+</body>
+</html>

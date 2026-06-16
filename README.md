@@ -12,6 +12,9 @@ for young children. No build step, no dependencies — emoji pictures are bundle
 - `ordinals.html` — the ordinal numbers generator (1st–10th): colour the Nth object,
   match ordinal↔word, which letter / what position from left or right, write in words and
   numerals, and picture-position questions. Accepts "3rd", "third", or "3".
+- `numbers20.html` — the numbers-to-20 generator: count & write, tens and ones, words↔numerals,
+  match number↔word, number patterns (what-comes-next / missing numbers), compare
+  (greater/smaller/greatest/smallest), order a set, and more/fewer comparisons.
 - `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
   half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
   an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by
