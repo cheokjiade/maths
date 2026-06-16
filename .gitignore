@@ -1,2 +1,6 @@
 # Source workbook photos — reference only, not for publishing
 input/
+
+# Verifier dependencies and screenshot output
+node_modules/
+verify/out/
