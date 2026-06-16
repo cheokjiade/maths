@@ -67,8 +67,10 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   which:WS.clamp(WS.toInt(WS.Q.get('which'),2),0,20), next:WS.clamp(WS.toInt(WS.Q.get('next'),3),0,20),
   compare:WS.clamp(WS.toInt(WS.Q.get('compare'),2),0,20) };
 const rng=WS.makeRng(cfg.seed);
-const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const NUMWORD = WS.NUMWORD;
+const nextDir   = balanced(['up','down']);    // count on vs count back
+const whichMode = balanced(['more','fewer']); // which set has more vs fewer
 
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
 const OBJS=[
@@ -105,11 +107,11 @@ function gSame(i){ const o=pick(OBJS); const T=randInt(2,7); const nGroups=pick(
   for(let k=0;k<nGroups-2;k++) opts.push({html:grp(o.cp,others[k]),ok:false,cls:'imgchip'});
   return '<div class="item"><span class="label">'+i+'.</span> Tap the two groups with the <b>same</b> number of '+o.many+'.'+selBlock('many',shuffle(opts))+'</div>'; }
 function gWhich(i){ const o=pick(OBJS); let a=randInt(2,9), b=randInt(2,9); while(a===b) b=randInt(2,9);
-  const mode=pick(['more','fewer']); const target= mode==='more'?Math.max(a,b):Math.min(a,b);
+  const mode=whichMode(i); const target= mode==='more'?Math.max(a,b):Math.min(a,b);
   const optA={html:'<span class="setlabel">A</span>'+grp(o.cp,a), ok:a===target, cls:'setchip'};
   const optB={html:'<span class="setlabel">B</span>'+grp(o.cp,b), ok:b===target, cls:'setchip'};
   return '<div class="item"><span class="label">'+i+'.</span> Which set has <b>'+mode+'</b>? (tap it)'+selBlock('one',[optA,optB])+'</div>'; }
-function gNext(i){ const s=pick([1,-1]); const len=4; let start;
+function gNext(i){ const s=nextDir(i)==='up'?1:-1; const len=4; let start;
   if(s>0) start=randInt(1,10-(len-1)*s); else start=randInt(1-(len-1)*s,10);
   const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
   let seq='<div class="seq">'; for(let k=0;k<len;k++){ seq+= k===len-1? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; } seq+='</div>';

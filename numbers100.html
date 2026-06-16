@@ -74,6 +74,10 @@ const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const wordsKind = balanced(['words','numerals']);    // spread in-words vs in-numerals
 const tensKind  = balanced(['compose','decompose']); // "7 tens 1 one = __" vs "24 = __ tens __ ones"
 const mlKind    = balanced(['1+','10+','1-','10-']);  // 1 more / 10 more / 1 less / 10 less
+const patDir    = balanced(['up','down']);            // count on vs count back
+const patStruct = balanced(['next','missing']);       // what-comes-next vs missing-middle
+const cmpMode   = balanced(['greater','smaller']);    // tick the greater vs smaller
+const ordDir    = balanced(['up','down']);            // arrange ascending vs descending
 
 /* ---- number words to 100 ---- */
 const ONES=['zero','one','two','three','four','five','six','seven','eight','nine'];
@@ -110,17 +114,18 @@ function gTensOnes(i){ const T=randInt(1,9), O=randInt(1,9), num=10*T+O;
 function gMoreLess(i){ const v=mlKind(i); const delta=v.startsWith('10')?10:1; const dir=v.endsWith('+')?'more':'less';
   let base, ans; if(dir==='more'){ base=randInt(1,100-delta); ans=base+delta; } else { base=randInt(delta+1,100); ans=base-delta; }
   return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:18pt;">'+delta+' '+dir+' than '+base+' is '+numIn(ans)+'.</span></div>'; }
-function gPattern(i){ const s=pick([1,2,5,10,-1,-2,-5,-10]); const len=5; let start;
+function gPattern(i){ const mag=pick([1,2,5,10]); const s= patDir(i)==='up'?mag:-mag; const len=5; let start;
   if(s>0) start=randInt(0,100-s*(len-1)); else start=randInt(-s*(len-1),100);
   const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
-  const nblank=rng()<0.5?1:2; const idxs=shuffle([0,1,2,3,4]).slice(0,nblank);
+  const nblank=pick([1,2]); const next=patStruct(i)==='next';
+  const idxs = next ? Array.from({length:nblank},(_,j)=>len-1-j) : shuffle([1,2,3]).slice(0,nblank);
   let seq='<div class="seq">'; for(let k=0;k<len;k++){ seq+= idxs.includes(k)? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; } seq+='</div>';
-  const title= idxs.every(x=>x>=len-nblank)?'What number comes next?':'Fill in the missing numbers.';
+  const title= next?'What number comes next?':'Fill in the missing numbers.';
   return '<div class="item"><span class="label">'+i+'.</span> '+title+seq+'</div>'; }
-function gCompare(i){ const set=distinct(2,11,99); const mode=pick(['greater','smaller']); const target= mode==='greater'?Math.max(...set):Math.min(...set);
+function gCompare(i){ const set=distinct(2,11,99); const mode=cmpMode(i); const target= mode==='greater'?Math.max(...set):Math.min(...set);
   const opts=set.map(x=>({html:''+x,ok:x===target}));
   return '<div class="item"><span class="label">'+i+'.</span> Tick the '+mode+' number. '+selBlock(opts)+'</div>'; }
-function gOrder(i){ const set=distinct(4,11,99); const up=rng()<0.5; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
+function gOrder(i){ const set=distinct(4,11,99); const up=ordDir(i)==='up'; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
   const tiles=shuffle(set).map(x=>'<span class="dtile" data-val="'+x+'">'+x+'</span>').join('');
   const slots=sorted.map((v,k)=>'<span class="dslot" data-answer="'+v+'"></span>'+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('');
   return '<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the numbers into order, from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'

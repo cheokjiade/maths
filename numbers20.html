@@ -64,13 +64,17 @@
 const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
   count:WS.clamp(WS.toInt(WS.Q.get('count'),3),0,20), tens:WS.clamp(WS.toInt(WS.Q.get('tens'),3),0,20),
   words:WS.clamp(WS.toInt(WS.Q.get('words'),4),0,20), match:WS.clamp(WS.toInt(WS.Q.get('match'),1),0,10),
-  pattern:WS.clamp(WS.toInt(WS.Q.get('pattern'),3),0,20), compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20),
+  pattern:WS.clamp(WS.toInt(WS.Q.get('pattern'),3),0,20), compare:WS.clamp(WS.toInt(WS.Q.get('compare'),4),0,20),
   order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20), mf:WS.clamp(WS.toInt(WS.Q.get('mf'),3),0,20) };
 const rng=WS.makeRng(cfg.seed);
 const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const NUMWORD = WS.NUMWORD;
 const wordsKind = balanced(['words','numerals']);   // spread in-words vs in-numerals
 const tensKind  = balanced(['make','plus']);        // spread "10 and N make" vs "10 + N ="
+const patDir    = balanced(['up','down']);          // count on vs count back
+const patStruct = balanced(['next','missing']);     // what-comes-next vs missing-middle
+const cmpVar    = balanced(['g2','s2','g5','s5']);  // greater/smaller x pair-tick/set-colour
+const ordDir    = balanced(['up','down']);          // arrange ascending vs descending
 
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
 const OBJS=[
@@ -103,21 +107,22 @@ function gWords(i){ const n=randInt(11,20);
 function gMatch(i){ const nums=distinct(4,11,20); let rows='';
   nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:NUMWORD[x],ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock('one',opts)+'</div>'; });
   return '<div class="item"><span class="label">'+i+'.</span> Match each number to its word (tap the word).'+rows+'</div>'; }
-function gPattern(i){ const s=pick([1,1,2,-1,-2]); const len=5; let start;
+function gPattern(i){ const mag=pick([1,2]); const s= patDir(i)==='up'?mag:-mag; const len=5; let start;
   if(s>0) start=randInt(0,20-s*(len-1)); else start=randInt(-s*(len-1),20);
   const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
-  const nblank=rng()<0.5?1:2; const idxs=shuffle([0,1,2,3,4]).slice(0,nblank);
+  const nblank=pick([1,2]); const next=patStruct(i)==='next';
+  const idxs = next ? Array.from({length:nblank},(_,j)=>len-1-j) : shuffle([1,2,3]).slice(0,nblank);
   let seq='<div class="seq">';
   for(let k=0;k<len;k++){ seq+= idxs.includes(k)? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; }
   seq+='</div>';
-  const title= idxs.every(x=>x>=len-nblank)?'What number comes next?':'Fill in the missing numbers.';
+  const title= next?'What number comes next?':'Fill in the missing numbers.';
   return '<div class="item"><span class="label">'+i+'.</span> '+title+seq+'</div>'; }
-function gCompare(i){ const K=pick([2,2,5]); const set=distinct(K,5,20);
-  const mode=pick(['greater','smaller']); const target= mode==='greater'?Math.max(...set):Math.min(...set);
+function gCompare(i){ const v=cmpVar(i); const K= v.endsWith('5')?5:2; const mode= v[0]==='g'?'greater':'smaller'; const set=distinct(K,5,20);
+  const target= mode==='greater'?Math.max(...set):Math.min(...set);
   const opts=set.map(x=>({html:''+x,ok:x===target}));
   const instr= K===2 ? 'Tick the '+mode+' number.' : 'Colour the '+(mode==='greater'?'greatest':'smallest')+' number.';
   return '<div class="item"><span class="label">'+i+'.</span> '+instr+selBlock('one',opts)+'</div>'; }
-function gOrder(i){ const set=distinct(4,5,20); const up=rng()<0.5; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
+function gOrder(i){ const set=distinct(4,5,20); const up=ordDir(i)==='up'; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
   const tiles=shuffle(set).map(x=>'<span class="dtile" data-val="'+x+'">'+x+'</span>').join('');
   const slots=sorted.map((v,k)=>'<span class="dslot" data-answer="'+v+'"></span>'+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('');
   return '<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the numbers into order, from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'
