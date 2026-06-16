@@ -60,6 +60,7 @@ const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
 const rng=WS.makeRng(cfg.seed);
 const { randInt, pick, shuffle, balanced } = WS.helpers(rng);
 const wordsKind = balanced(['words','numerals']);  // spread in-words vs in-numerals across the Words section
+const wordsNord = shuffle([1,2,3,4,5,6,7,8,9,10]); // distinct numbers across the Words section
 const colourSide = balanced(['left','right']);     // colour the Nth from left vs right
 const whichSide  = balanced(['left','right']);     // which letter is Nth from left vs right
 const posSide    = balanced(['left','right']);     // position from left vs right
@@ -114,7 +115,7 @@ function gPosition(i){
   return '<div class="item"><span class="label">'+i+'.</span> In which position (from the '+side+') is letter '+LETTERS[k]+'?'+letterRow(L)+'Answer: '+txtIn('ord',ordSym(pos),true)+'</div>';
 }
 function gWords(i){
-  const n=randInt(1,10);
+  const n=wordsNord[(i-1)%wordsNord.length];
   if(wordsKind(i)==='words') return '<div class="item"><span class="label">'+i+'.</span> Write '+ordSym(n)+' in words. '+txtIn('ord',ordWord(n))+'</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+ordWord(n)+'&rdquo; in numerals. '+txtIn('ord',ordSym(n),true)+'</div>';
 }

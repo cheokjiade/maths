@@ -17,7 +17,7 @@ const { chromium } = require('playwright-core');
 const TARGETS = [
   { name: 'subtraction', file: 'subtraction.html', params: 'seed=verify' },
   { name: 'addition',    file: 'addition.html',    params: 'seed=verify' },
-  { name: 'shapes',      file: 'shapes.html', gateDups: true,
+  { name: 'shapes',      file: 'shapes.html',
     params: 'seed=verify&name=2&match=1&count=1&group=1&compose=1&object=1&grid=1&draw=1&part=1' },
   { name: 'ordinals',    file: 'ordinals.html', params: 'seed=verify' },
   { name: 'numbers20',   file: 'numbers20.html', params: 'seed=verify' },
@@ -214,7 +214,7 @@ async function dupScan(ctx, t) {
 
     const happyOK = happy.total > 0 && happy.right === happy.total && happy.errs.length === 0;
     const probeOK = probe.total > 0 && probe.right < probe.total;
-    const dupGateFail = !!t.gateDups && dup.fail;
+    const dupGateFail = dup.fail;   // every generator must be free of duplicate questions
     const pass = happyOK && probeOK && !dupGateFail;
     allPass = allPass && pass;
 
@@ -225,9 +225,8 @@ async function dupScan(ctx, t) {
       (happy.errs.length ? '  ERRORS: ' + happy.errs.join(' ; ') : '')
     );
     for (const f of dup.findings) {
-      const sys = f.seedsWith >= 2;
-      if (!sys) continue;                              // one-off coincidences aren't worth the noise
-      console.log(`        ${t.gateDups ? 'DUP-FAIL' : 'DUP'}  "${f.section}" — identical question x${f.exampleCount} (${f.seedsWith}/3 seeds)`);
+      if (f.seedsWith < 2) continue;                   // one-off coincidences aren't worth the noise
+      console.log(`        DUP  "${f.section}" — identical question x${f.exampleCount} (${f.seedsWith}/3 seeds)`);
     }
   }
 

@@ -70,6 +70,7 @@ const rng=WS.makeRng(cfg.seed);
 const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const NUMWORD = WS.NUMWORD;
 const wordsKind = balanced(['words','numerals']);   // spread in-words vs in-numerals
+const wordsN20  = shuffle([11,12,13,14,15,16,17,18,19,20]); // distinct numbers across the Words section
 const tensKind  = balanced(['make','plus']);        // spread "10 and N make" vs "10 + N ="
 const patDir    = balanced(['up','down']);          // count on vs count back
 const patStruct = balanced(['next','missing']);     // what-comes-next vs missing-middle
@@ -101,7 +102,7 @@ function gTens(i){ const ones=randInt(1,9); const N=10+ones; const o=pickObj();
   const pic='<div class="qrow"><div class="tenblock">'+grp(o.cp,10)+'</div><span style="font-size:20pt;">and</span><div class="pic-box" style="max-width:30%;">'+grp(o.cp,ones)+'</div></div>';
   const eq= tensKind(i)==='make' ? '10 and '+ones+' make '+ansIn(N,true) : '10 + '+ones+' = '+ansIn(N,true);
   return '<div class="item"><span class="label">'+i+'.</span> Fill in the number.'+pic+'<div style="margin-top:6px;font-size:20pt;">'+eq+'</div></div>'; }
-function gWords(i){ const n=randInt(11,20);
+function gWords(i){ const n=wordsN20[(i-1)%wordsN20.length];
   if(wordsKind(i)==='words') return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+ansIn(NUMWORD[n])+'</div>';
   return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+NUMWORD[n]+'&rdquo; in numerals. '+ansIn(n,true)+'</div>'; }
 function gMatch(i){ const nums=distinct(4,11,20); let rows='';

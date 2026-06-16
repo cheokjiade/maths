@@ -164,6 +164,10 @@ function pickABdistinct(){
   for(let i=0;i<12;i++){ const t=randInt(2,MAXSUM); const a=randInt(1,t-1); const b=t-a; if(a!==b) return {a,b,sum:t}; }
   const t=randInt(2,MAXSUM); const a=randInt(1,t-1); return {a,b:t-a,sum:t};
 }
+// wrap a random picker so a section never repeats the same question (re-rolls; falls back after 40 tries)
+function distinctBy(pick, keyOf){ const used=new Set(); return ()=>{ let v; for(let g=0;g<40;g++){ v=pick(); const k=keyOf(v); if(!used.has(k)){ used.add(k); return v; } } used.add(keyOf(v)); return v; }; }
+const commutePick = distinctBy(pickABdistinct, p=>Math.min(p.a,p.b)+'|'+Math.max(p.a,p.b));
+const missingPick = distinctBy(pickABpos,      p=>Math.min(p.a,p.b)+'|'+Math.max(p.a,p.b));
 
 /* ---------- input factories ---------- */
 const gin=(cls,ans)=>'<span class="field"><input class="'+cls+' gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
@@ -218,7 +222,7 @@ function qWord(i){
 
 const dots=n=>{ let s='<span class="dotgrp">'; for(let i=0;i<n;i++) s+='<span class="dot"></span>'; return s+'</span>'; };
 function qCommute(i){
-  const {a,b,sum}=pickABdistinct();
+  const {a,b,sum}=commutePick();
   return '<div class="item"><span class="label">'+i+'.</span> Write two addition equations.'
     +'<div class="qwrap"><div class="commute-rows">'
     +'<div>'+ansIn(a)+' + '+ansIn(b)+' = '+ansIn(sum)+'</div>'
@@ -227,7 +231,7 @@ function qCommute(i){
 }
 
 function qMissing(i){
-  const {a,b,sum}=pickABpos(); const n=pickNoun();
+  const {a,b,sum}=missingPick(); const n=pickNoun();
   return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+ansIn(a)+' + '+ansIn(b)+' = '+sum+'</span>'+twoGroups(n.cp,a,b)+'</div></div>';
 }
 

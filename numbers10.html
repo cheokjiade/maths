@@ -71,6 +71,8 @@ const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
 const NUMWORD = WS.NUMWORD;
 const nextDir   = balanced(['up','down']);    // count on vs count back
 const whichMode = balanced(['more','fewer']); // which set has more vs fewer
+const countN    = shuffle([1,2,3,4,5,6,7,8,9,10]); // distinct numbers across the Count section
+const nextUsed  = new Set();                       // distinct sequences across the What-comes-next section
 
 const TW=cp=>'assets/twemoji/'+cp+'.svg';
 const OBJS=[
@@ -93,7 +95,7 @@ function selBlock(mode,opts){ const id='s'+(uid++); const chips=opts.map(o=>'<bu
 function countnBlock(need,chips){ const id='c'+(uid++); return '<div class="countn" data-need="'+need+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
 
 /* ---- generators ---- */
-function gCount(i){ const o=pick(OBJS); const N=randInt(1,10);
+function gCount(i){ const o=pick(OBJS); const N=countN[(i-1)%countN.length];
   return '<div class="item"><span class="label">'+i+'.</span> Count, then write the number and the word.<div class="qrow"><div class="pic-box">'+grp(o.cp,N)+'</div><div>Number: '+numIn(N)+' &nbsp; Word: '+wordIn(NUMWORD[N])+'</div></div></div>'; }
 function gMatch(i){ const nums=distinct(4,1,10); let rows='';
   nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:NUMWORD[x],ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock('one',opts)+'</div>'; });
@@ -111,8 +113,9 @@ function gWhich(i){ const o=pick(OBJS); let a=randInt(2,9), b=randInt(2,9); whil
   const optA={html:'<span class="setlabel">A</span>'+grp(o.cp,a), ok:a===target, cls:'setchip'};
   const optB={html:'<span class="setlabel">B</span>'+grp(o.cp,b), ok:b===target, cls:'setchip'};
   return '<div class="item"><span class="label">'+i+'.</span> Which set has <b>'+mode+'</b>? (tap it)'+selBlock('one',[optA,optB])+'</div>'; }
-function gNext(i){ const s=nextDir(i)==='up'?1:-1; const len=4; let start;
-  if(s>0) start=randInt(1,10-(len-1)*s); else start=randInt(1-(len-1)*s,10);
+function gNext(i){ const s=nextDir(i)==='up'?1:-1; const len=4; let start, key, g=0;
+  do{ start = s>0 ? randInt(1,10-(len-1)*s) : randInt(1-(len-1)*s,10); key=s+':'+start; } while(nextUsed.has(key) && g++<60);
+  nextUsed.add(key);
   const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
   let seq='<div class="seq">'; for(let k=0;k<len;k++){ seq+= k===len-1? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; } seq+='</div>';
   return '<div class="item"><span class="label">'+i+'.</span> What number comes next?'+seq+'</div>'; }
