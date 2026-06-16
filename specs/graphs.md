@@ -12,9 +12,9 @@ interaction.
 ## 1. Page structure
 
 - **Control panel** — collapsible `<details id="ws-panel">` titled `📊 Picture Graphs Worksheet —
-  options`, seed field, two count fields (`read`, `build`), standard buttons.
+  options`, seed field, three count fields (`readobj`, `readsym`, `build`), standard buttons.
 - **Header** — `Picture Graphs`, meta line, Name/Date row.
-- **Body** — two sections (Read → Build). Empty counts hide their heading.
+- **Body** — three sections (Read object → Read symbol → Build). Empty counts hide their heading.
 
 ---
 
@@ -22,21 +22,23 @@ interaction.
 
 | Section (fn) | Asks | Child does | Visual |
 |--------------|------|------------|--------|
-| Read (`gRead`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph of 3–4 categories — see **graph styles** below |
+| Read object graph (`gReadObject`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph of 3–4 categories, each with its own emoji — **no key line** |
+| Read symbol graph (`gReadSymbol`) | 6 sub-questions per graph | types 4 numbers, taps 2 category words | a bordered graph of 3–4 categories using one generic shape (▲ / ★ / ■) — includes key |
 | Build (`gBuild`) | "count each tray, shade the graph to match" | taps cells to shade each column | 3–4 columns of empty cells, each captioned with a tray of objects |
 
-**Graph styles** (from a `THEMES` table, picked per graph, in **horizontal or vertical** orientation):
-- **Object graph** — each category *is* its own object, drawn with its own emoji (animals, toys,
-  snacks). Phrasing is "There are N {category}"; **no key line** (rows use different icons).
-- **Generic-symbol graph** — one drawn shape (▲ / ★ / ■ / ●) stands for 1 item; categories are
-  **names/labels**. Two phrasings: *count* (fruit names → "There are N mangoes") and *owner*
+**Graph styles** (from a `THEMES` table, split into two pools, in **horizontal or vertical** orientation):
+- **Object graph** (`gReadObject`) — each category *is* its own object, drawn with its own emoji
+  (animals, toys, snacks). Phrasing is "There are N {category}"; **no key line** (rows use different
+  icons). Themes picked via `balanced(objThemes)`.
+- **Symbol graph** (`gReadSymbol`) — one drawn shape (▲ / ★ / ■) stands for 1 item; categories
+  are **names/labels**. Two phrasings: *count* (fruit names → "There are N mangoes") and *owner*
   (children's names → "John has N stickers"). Adds a key: **"Each ▲ stands for 1 fruit."**
+  Themes picked via `balanced(symThemes)`.
 
-The three styles (object / generic-shape-items / generic-shape-owner) are **spread across the
-worksheet** via `styleOrder[(i-1)%3]` (a shuffled round-robin), not picked independently per graph —
-so a worksheet with `read ≥ 3` (the default) reliably shows all three rather than, by chance,
-repeating one. This is the same "balance variants across the section" pattern as `within20`'s
-add/subtract word problems.
+Both sections share the same render function `renderRead(i, th)`, which receives a theme picked by
+the caller. Object graphs appear first; symbol graphs are ordered last. Within each section,
+`balanced()` spreads across the available themes so all theme variants appear before any repeats —
+the same "balance variants" pattern as `within20`'s add/subtract word problems.
 
 **Read sub-questions** (all derived from the category counts): *count of category 1*, *more A than B*,
 *fewer B than A*, *total altogether* (numeric); *the most* and *the fewest* (tap a category word).
@@ -52,7 +54,8 @@ URL params, all clamped (seed defaults to `WS.randomSeed()`):
 | Param | Section | Default | Range |
 |-------|---------|---------|-------|
 | `seed` | RNG seed | random | any string |
-| `read` | Read-the-graph blocks | 3 | 0–10 |
+| `readobj` | Read-the-picture-graph blocks | 2 | 0–10 |
+| `readsym` | Read-the-symbol-graph blocks | 2 | 0–10 |
 | `build` | Build-the-graph blocks | 1 | 0–10 |
 
 ---
