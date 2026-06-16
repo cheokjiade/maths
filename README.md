@@ -22,6 +22,8 @@ for young children. No build step, no dependencies — emoji pictures are bundle
   operations, make-a-ten, colour-match, missing-number, and boxed word problems.
 - `graphs.html` — picture graphs (Unit 8): read a picture graph (count, more/fewer, total,
   most/least) and an interactive build-a-graph (shade cells to match tray counts).
+- `numbers100.html` — numbers to 100 (Unit 9): count tens & ones (base-ten blocks), words↔numerals
+  to 100, match, more/less, number patterns, compare, order, and colour a hundred-grid.
 - `shapes.html` — the shapes worksheet generator (rectangle, square, circle, triangle,
   half/quarter circle): name, count, group, decompose, colour-match, and object→shape, plus
   an interactive copy-the-figure-on-a-grid exercise (snap dots to draw lines, auto-marked by

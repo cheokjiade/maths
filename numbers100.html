@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numbers to 100 Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* numbers-to-100-specific components */
+  .qrow { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:64px; }
+  input.ans.word { width:140px; }
+  .pic-box { border:1.5px solid #888; border-radius:6px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:flex-end; max-width:62%; }
+  .ten { vertical-align:bottom; } .one { vertical-align:bottom; }
+  .seq { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .seqbox { width:54px; height:50px; border:2px solid var(--ink); border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:18pt; }
+  .seqbox input { width:100%; height:100%; border:none; text-align:center; font:inherit; font-size:18pt; background:transparent; }
+  .arrow { font-size:18pt; }
+  .matchrow { display:flex; align-items:center; gap:12px; margin:6px 0; flex-wrap:wrap; }
+  .matchrow .num { font-weight:bold; min-width:40px; font-size:18pt; }
+  .chip.box { border-radius:8px; min-width:54px; }
+  .setline { display:flex; gap:10px; flex-wrap:wrap; margin:6px 0; }
+  .setnum { border:2px solid #888; border-radius:6px; padding:4px 12px; font-weight:bold; }
+  .grid100 { display:grid; grid-template-columns:repeat(10,20px); gap:1px; margin:8px 0; width:max-content; }
+  .grid100 .chip { width:20px; height:20px; min-width:0; padding:0; border:1px solid #bbb; border-radius:0; background:#fff; }
+  .grid100 .chip.selected { background:#bcd6f6; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>💯 Numbers to 100 Worksheet — options</summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. The same seed always makes the same sheet; leave blank for a random one.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Count tens-rods and ones, write tens, ones, and the number.">Count tens &amp; ones <input type="number" id="f-count10" min="0" max="20"></label>
+      <label data-tip="Write a number in words, or a word in numerals (to 100).">Words/numerals <input type="number" id="f-words" min="0" max="20"></label>
+      <label data-tip="Match a number to its word.">Match <input type="number" id="f-match" min="0" max="10"></label>
+      <label data-tip="‘7 tens 1 one = __’ and ‘24 = __ tens __ ones’.">Tens &amp; ones <input type="number" id="f-tensones" min="0" max="20"></label>
+      <label data-tip="1 more / 10 more / 1 less / 10 less than a number.">More/less <input type="number" id="f-moreless" min="0" max="20"></label>
+      <label data-tip="Number patterns and missing numbers (steps of 1, 2, 5, 10).">Patterns <input type="number" id="f-patterns" min="0" max="20"></label>
+      <label data-tip="Tick the greater or smaller of two numbers.">Compare <input type="number" id="f-compare" min="0" max="20"></label>
+      <label data-tip="Arrange a set of numbers in order.">Order <input type="number" id="f-order" min="0" max="20"></label>
+      <label data-tip="Colour (tap) N squares on a hundred-grid.">Colour grid <input type="number" id="f-colourgrid" min="0" max="10"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Type digits or words (e.g. 42 or "forty-two"); tap numbers/squares to select. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Numbers to 100</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Great job! 💯⭐</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  count10:WS.clamp(WS.toInt(WS.Q.get('count10'),3),0,20), words:WS.clamp(WS.toInt(WS.Q.get('words'),4),0,20),
+  match:WS.clamp(WS.toInt(WS.Q.get('match'),1),0,10), tensones:WS.clamp(WS.toInt(WS.Q.get('tensones'),4),0,20),
+  moreless:WS.clamp(WS.toInt(WS.Q.get('moreless'),4),0,20), patterns:WS.clamp(WS.toInt(WS.Q.get('patterns'),3),0,20),
+  compare:WS.clamp(WS.toInt(WS.Q.get('compare'),3),0,20), order:WS.clamp(WS.toInt(WS.Q.get('order'),2),0,20),
+  colourgrid:WS.clamp(WS.toInt(WS.Q.get('colourgrid'),1),0,10) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct } = WS.helpers(rng);
+
+/* ---- number words to 100 ---- */
+const ONES=['zero','one','two','three','four','five','six','seven','eight','nine'];
+const TEENS=['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function numWord100(n){ if(n===100) return 'one hundred'; if(n<10) return ONES[n]; if(n<20) return TEENS[n-10];
+  const t=Math.floor(n/10), o=n%10; return TENS[t]+(o? '-'+ONES[o] : ''); }
+const W100={}; for(let n=0;n<=100;n++){ const w=numWord100(n); W100[w]=n; W100[w.replace(/-/g,' ')]=n; W100[w.replace(/-/g,'')]=n; }
+function parse100(s){ s=(s||'').toLowerCase().trim().replace(/\s+/g,' '); if(s==='') return NaN; if(/^\d+$/.test(s)) return Number(s);
+  if(s in W100) return W100[s]; const c=s.replace(/\s/g,''); return (c in W100)?W100[c]:NaN; }
+
+let uid=0;
+const numIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+const wordIn=a=>'<span class="field"><input class="ans word gradable" data-kind="n100" data-answer="'+a+'" type="text" autocomplete="off"></span>';
+const seqInput=a=>'<span class="seqbox"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip box" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<span class="sel-block" data-mode="one" id="'+id+'"><span class="chips">'+chips+'</span></span>'; }
+function tenRod(){ let s=''; for(let r=0;r<10;r++) s+='<rect x="1" y="'+(1+r*6)+'" width="12" height="6" fill="#cfe0f5" stroke="#345" stroke-width="0.5"/>'; return '<svg class="ten" width="16" height="64" viewBox="0 0 14 62">'+s+'</svg>'; }
+const oneSq=()=>'<svg class="one" width="13" height="13" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="#fde9cf" stroke="#345" stroke-width="0.6"/></svg>';
+function blocks(T,O){ let s='<div class="pic-box">'; for(let i=0;i<T;i++) s+=tenRod(); s+='<span style="display:inline-block;width:8px;"></span>'; for(let i=0;i<O;i++) s+=oneSq(); return s+'</div>'; }
+
+/* ---- generators ---- */
+function gCount10(i){ const T=randInt(1,9), O=randInt(0,9), num=10*T+O;
+  return '<div class="item"><span class="label">'+i+'.</span> Count the tens and ones.<div class="qrow">'+blocks(T,O)
+    +'<div>There are '+numIn(T)+' tens and '+numIn(O)+' ones.<br>The number is '+numIn(num)+'.</div></div></div>'; }
+function gWords(i){ const n=randInt(11,99);
+  if(rng()<0.5) return '<div class="item"><span class="label">'+i+'.</span> Write '+n+' in words. '+wordIn(numWord100(n))+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Write &ldquo;'+numWord100(n)+'&rdquo; in numerals. '+numIn(n)+'</div>'; }
+function gMatch(i){ const nums=distinct(4,21,99); let rows='';
+  nums.forEach(n=>{ const opts=shuffle(nums.map(x=>({html:numWord100(x),ok:x===n}))); rows+='<div class="matchrow"><span class="num">'+n+'</span> &rarr; '+selBlock(opts)+'</div>'; });
+  return '<div class="item"><span class="label">'+i+'.</span> Match each number to its word (tap the word).'+rows+'</div>'; }
+function gTensOnes(i){ const T=randInt(1,9), O=randInt(1,9), num=10*T+O;
+  if(rng()<0.5) return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:20pt;">'+T+' tens '+O+' '+(O===1?'one':'ones')+' = '+numIn(num)+'</span></div>';
+  return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:20pt;">'+num+' = '+numIn(T)+' tens '+numIn(O)+' ones</span></div>'; }
+function gMoreLess(i){ const delta=pick([1,10]); const dir=pick(['more','less']);
+  let base, ans; if(dir==='more'){ base=randInt(1,100-delta); ans=base+delta; } else { base=randInt(delta+1,100); ans=base-delta; }
+  return '<div class="row"><span class="num">'+i+'.</span> <span style="font-size:18pt;">'+delta+' '+dir+' than '+base+' is '+numIn(ans)+'.</span></div>'; }
+function gPattern(i){ const s=pick([1,2,5,10,-1,-2,-5,-10]); const len=5; let start;
+  if(s>0) start=randInt(0,100-s*(len-1)); else start=randInt(-s*(len-1),100);
+  const vals=[]; for(let k=0;k<len;k++) vals.push(start+s*k);
+  const nblank=rng()<0.5?1:2; const idxs=shuffle([0,1,2,3,4]).slice(0,nblank);
+  let seq='<div class="seq">'; for(let k=0;k<len;k++){ seq+= idxs.includes(k)? seqInput(vals[k]) : '<span class="seqbox">'+vals[k]+'</span>'; if(k<len-1) seq+='<span class="arrow">&rarr;</span>'; } seq+='</div>';
+  const title= idxs.every(x=>x>=len-nblank)?'What number comes next?':'Fill in the missing numbers.';
+  return '<div class="item"><span class="label">'+i+'.</span> '+title+seq+'</div>'; }
+function gCompare(i){ const set=distinct(2,11,99); const mode=pick(['greater','smaller']); const target= mode==='greater'?Math.max(...set):Math.min(...set);
+  const opts=set.map(x=>({html:''+x,ok:x===target}));
+  return '<div class="item"><span class="label">'+i+'.</span> Tick the '+mode+' number. '+selBlock(opts)+'</div>'; }
+function gOrder(i){ const set=distinct(4,11,99); const up=rng()<0.5; const sorted=set.slice().sort((a,b)=>up?a-b:b-a);
+  const s='<div class="setline">'+set.map(x=>'<span class="setnum">'+x+'</span>').join('')+'</div>';
+  const blanks='<div class="seq">'+sorted.map((v,k)=>seqInput(v)+(k<sorted.length-1?'<span class="arrow">&rarr;</span>':'')).join('')+'</div>';
+  return '<div class="item"><span class="label">'+i+'.</span> Arrange the numbers from the '+(up?'smallest to the greatest':'greatest to the smallest')+'.'+s+blanks+'</div>'; }
+function gColourGrid(i){ const N=randInt(12,55); let cells=''; for(let k=0;k<100;k++) cells+='<button type="button" class="chip"></button>';
+  return '<div class="item"><span class="label">'+i+'.</span> Colour (tap) '+N+' of the squares.<div class="countn grid100" data-need="'+N+'">'+cells+'</div></div>'; }
+
+function section(t,c,fn,gridCss){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+(gridCss?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 40px;">'+b+'</div>':b); }
+let html='';
+html+=section('Count the tens and ones.', cfg.count10, gCount10);
+html+=section('Write in words or numerals.', cfg.words, gWords, true);
+html+=section('Match numbers to words.', cfg.match, gMatch);
+html+=section('Tens and ones.', cfg.tensones, gTensOnes, true);
+html+=section('More and less.', cfg.moreless, gMoreLess, true);
+html+=section('Number patterns.', cfg.patterns, gPattern);
+html+=section('Compare the numbers.', cfg.compare, gCompare);
+html+=section('Order the numbers.', cfg.order, gOrder);
+html+=section('Colour the hundred-grid.', cfg.colourgrid, gColourGrid);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  numbers to 100';
+
+/* ---- colour-grid: cell toggling + custom marker (reuses the .countn block) ---- */
+document.querySelectorAll('.countn .chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('selected')));
+function gridExtra(){ let total=0,right=0;
+  document.querySelectorAll('.countn').forEach(b=>{ total++; const need=+b.dataset.need; const sel=b.querySelectorAll('.chip.selected');
+    const ok=sel.length===need; b.querySelectorAll('.chip').forEach(c=>c.classList.remove('correct','incorrect')); sel.forEach(c=>c.classList.add(ok?'correct':'incorrect')); if(ok)right++; });
+  return { total, right }; }
+
+/* ---- wiring (shared engine) ---- */
+WS.addKind('n100', (v,a)=>parse100(v)===parse100(a));
+WS.wireChips();
+WS.wirePanel(cfg, ['count10','words','match','tensones','moreless','patterns','compare','order','colourgrid'], {
+  mark: () => WS.mark({ extras: [gridExtra] }), clear: () => WS.clearAll() });
+</script>
+</body>
+</html>

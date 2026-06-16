@@ -22,6 +22,7 @@ what is unique to each file.
 | [`within20.md`](within20.md) | `within20.html` | Add & Subtract within 20 — bare/picture, make-a-ten, match, missing, word problems |
 | [`ordinals.md`](ordinals.md) | `ordinals.html` | Ordinal numbers generator (1st–10th) |
 | [`numbers20.md`](numbers20.md) | `numbers20.html` | Numbers-to-20 generator — count, tens/ones, words, patterns, compare, order, more/fewer |
+| [`numbers100.md`](numbers100.md) | `numbers100.html` | Numbers-to-100 generator — base-ten blocks, words to 100, more/less, patterns, compare, order, hundred-grid |
 | [`verify.md`](verify.md) | `verify/` | Generic Playwright verifier that marks every generator end to end |
 | [`legacy-prototypes.md`](legacy-prototypes.md) | `subtraction_worksheet*.html` | Superseded prototypes — historical, unreferenced |
 
