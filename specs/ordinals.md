@@ -2,19 +2,18 @@
 
 **File:** `ordinals.html` · **Shared patterns:** [`conventions.md`](conventions.md)
 
-A self-contained, seed-driven generator for ordinal-number practice from **1st to 10th**: colour the
-Nth object, match ordinals to words, find letters by position, positions from left/right, and convert
-between words and numerals. Same seed / marking / print model as the rest of the repo.
-
-> **Status:** this file is currently **untracked in git** (new, not yet committed). Its spec is
-> included here for completeness; commit the page and this spec together.
+A seed-driven generator for ordinal-number practice from **1st to 10th**, built on the shared `WS`
+engine (see [`conventions.md`](conventions.md)): colour the Nth object, match ordinals to words, find
+letters by position, positions from left/right, and convert between words and numerals. Same seed /
+marking / print model as the rest of the repo.
 
 ---
 
 ## 1. Page structure
 
-- **Control panel** (`.no-print`) — `🥇 Ordinal Numbers Worksheet Generator (1st–10th)`, seed field,
-  six count fields, standard button row.
+- **Control panel** — a collapsible `<details id="ws-panel">` (auto-collapses on phones) titled
+  `🥇 Ordinal Numbers Worksheet — options (1st–10th)`, seed field, six count fields (each with a
+  `data-tip` tooltip), standard button row.
 - **Header** — `Ordinal Numbers`, meta line, Name/Date row.
 - **Body** — six sections in fixed order (Colour → Match → Which → Position → Words → Picture). Empty
   counts hide their headings.
@@ -42,7 +41,7 @@ URL params, all clamped:
 
 | Param | Section | Default | Range |
 |-------|---------|---------|-------|
-| `seed` | RNG seed | `'1'` | any string |
+| `seed` | RNG seed | random (`WS.randomSeed()`) | any string |
 | `colour` | Colour the object | 3 | 0–20 |
 | `match` | Match ordinals | 1 | 0–10 |
 | `which` | Which letter | 3 | 0–20 |
@@ -74,6 +73,9 @@ URL params, all clamped:
 3. **Flexible answer parsing (`normOrd`, `normName`).** `normOrd` accepts "third", "3rd", or "3"
    (word lookup first, then a `^(\d+)(st|nd|rd|th)?$` regex); `normName` singularises object names by
    stripping a trailing `s` (guarded so it never empties the string). Both lowercase/trim first.
+   These register as shared answer-kinds so `WS.mark()` grades each `data-kind` input through them:
+   `WS.addKind('ord', (v,a)=>normOrd(v)===normOrd(a))`, plus `'letter'` (case-insensitive) and
+   `'name'`. The page only calls `WS.wireChips()` + `WS.wirePanel(...)`.
 
    ```javascript
    function normOrd(s){ s=(s||'').toLowerCase().trim().replace(/\s+/g,' ');

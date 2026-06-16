@@ -252,7 +252,7 @@ and regenerates.
 
 | Parameter | Meaning | Allowed | Default |
 |-----------|---------|---------|---------|
-| seed | Any text or number; drives all randomness | any string | `1` |
+| seed | Any text or number; drives all randomness | any string | random short (`WS.randomSeed()`) |
 | max | Largest number used (the largest minuend/total) | 10–25 (clamp) | 10 |
 | zero | Whether a `0` answer is permitted | on/off | off |
 | bare | Number of plain equations (Section 1) | 0–40 | 5 |
@@ -320,8 +320,10 @@ The control panel must also offer: a **Generate** action (apply settings + regen
 
 ## 12. Deployment / packaging
 
-- The deliverable is a **single self-contained HTML file** (its logic and styling inline) plus
-  the **local assets folder** of icons. No build step and no runtime third-party requests.
+- The deliverable is a **static page that links the shared engine** (`assets/worksheet.css` +
+  `assets/worksheet.js`, a plain `<link>` + classic `<script src>`) plus the **local assets folder**
+  of icons. No build step and no runtime third-party requests; it works from `file://` because the
+  shared files are classic scripts, not ES modules.
 - It must run when opened directly from disk and when served as a static site from **GitHub
   Pages** (the main HTML file named so it serves as the site index).
 - Include a short README describing usage and the URL parameters, and crediting Twemoji.
@@ -367,29 +369,30 @@ A correct implementation should satisfy all of the following:
 
 ## 14. Implementation notes (as built)
 
-This appendix describes how `subtraction.html` actually implements the requirements above. Line
-numbers are approximate. Shared scaffolding (PRNG, marking, print) lives in
-[`conventions.md`](conventions.md); this section covers what is specific to subtraction.
+This appendix describes how `subtraction.html` actually implements the requirements above. The page
+links the shared engine — `assets/worksheet.css` and `assets/worksheet.js` (global `WS`) — and uses
+it for the PRNG (`WS.makeRng`/`WS.helpers`), config helpers (`WS.Q`/`clamp`/`toInt`, seed via
+`WS.randomSeed()`), marking (`WS.mark` — every subtraction input uses the default numeric kind), and
+the collapsible panel (`WS.wirePanel`). See [`conventions.md`](conventions.md) for those shared
+contracts; this section covers what is specific to subtraction.
 
 ### 14.1 File map
 
-| Region | Lines | Purpose |
-|--------|-------|---------|
-| CSS — layout / panel / worksheet | 8–107 | A4 page, control panel, equation & box styling, cross-out mark, scene containers |
-| CSS — `@media print` | 109–114 | Hide panel & corrections, normalise marked answers to ink |
-| PRNG (xmur3 + mulberry32) | 184–203 | Seeded RNG stream |
-| Config from URL | 205–219 | Parse/clamp `seed,max,zero,bare,given,btk,pw` |
-| Container catalogue | 224–233 | 8 containers (cp + phrase) |
-| Noun catalogue | 236–278 | ~22 nouns (forms, place, actions, containers, scene) |
-| Pool filters | 280–281 | `TAKEAWAY_POOL`, `PARTWHOLE_POOL` |
-| Draw-without-replacement | 283–292 | `pick()` + `usedCP` set |
-| Problem models | 294–317 | `newTakeaway()`, `newPartWhole()` |
-| Render helpers + scenes | 319–356 | `img/imgs/grp`, tank & pond SVG, box/answer inputs |
-| Grammar | 358–364 | `actionLine()` |
-| Problem renderer | 366–397 | dispatch on archetype A/B/C |
-| Paint worksheet | 399–407 | sections, hide empty ones |
-| Marking | 410–455 | word parser, grader, clear |
-| Panel wiring | 457–482 | populate fields, `apply()`, buttons |
+| Region | Purpose |
+|--------|---------|
+| `<link>` shared CSS + page `<style>` | shared stylesheet, then subtraction-only CSS (equation/box styling, cross-out mark, scene containers) |
+| Collapsible `<details id="ws-panel">` | seed + 6 option fields (each with a `data-tip` tooltip) + button row |
+| `<script src="assets/worksheet.js">` | the shared `WS` engine (PRNG, marking, panel) |
+| Config | `WS.Q`/`clamp`/`toInt` → `seed,max,zero,bare,given,btk,pw`; seed via `WS.randomSeed()` |
+| `rng` / `randInt` | `WS.makeRng(cfg.seed)` + a local `randInt` |
+| Container + noun catalogues | 8 containers (cp + phrase), ~22 nouns (forms, place, actions, containers, scene) |
+| `pick()` + `usedCP` | draw-without-replacement nouns |
+| `newTakeaway()` / `newPartWhole()` | problem models |
+| Render helpers + scenes | `img/imgs/grp`, tank & pond SVG, box/answer inputs |
+| `actionLine()` | grammar |
+| `renderProblem()` | dispatch on archetype A/B/C |
+| Paint + section hiding | build sheet, drop empty sections |
+| `WS.wirePanel(cfg, keys, {mark,clear})` | shared numeric marking + panel wiring |
 
 ### 14.2 Data catalogue shape
 

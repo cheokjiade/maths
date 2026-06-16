@@ -2,18 +2,20 @@
 
 **File:** `addition.html` · **Shared patterns:** [`conventions.md`](conventions.md)
 
-A self-contained, seed-driven generator for addition practice with **sums within 10**. It is the
-broadest of the generators — ten question types ranging from bare equations to number bonds, picture
-sums, word problems, commutative pairs, and an interactive colour-the-matching-sums exercise. Same
-seed / marking / print model as the rest of the repo.
+A seed-driven generator for addition practice with **sums within 10**, built on the shared `WS`
+engine (see [`conventions.md`](conventions.md)). It is the broadest of the generators — ten question
+types ranging from bare equations to number bonds, picture sums, word problems, commutative pairs,
+and an interactive colour-the-matching-sums exercise. Same seed / marking / print model as the rest
+of the repo.
 
 ---
 
 ## 1. Page structure
 
-- **Control panel** (`.no-print`) — `➕ Addition Worksheet Generator (sums within 10)`, a seed field,
-  an **Allow +0** checkbox, and eleven count fields (one per type). Buttons: Generate · 🎲 Random
-  seed · ✅ Submit & Mark · Clear answers · 🖨️ Print.
+- **Control panel** — a collapsible `<details id="ws-panel">` (auto-collapses on phones) titled
+  `➕ Addition Worksheet — options`, with a seed field, an **Allow +0** checkbox, and eleven count
+  fields (each `<label data-tip>` carries a hover/tap tooltip). Buttons: Generate · 🎲 Random seed ·
+  ✅ Submit & Mark · Clear answers · 🖨️ Print.
 - **Worksheet header** — title `Addition Practice`, a meta line (`seed: … • sums within 10 • …`), and
   a Name/Date row.
 - **Worksheet body** — sections rendered in a **fixed order** (Count → Subset → Bond → Pic → Bare →
@@ -51,7 +53,7 @@ URL params, all clamped (see [`conventions.md`](conventions.md) §3):
 
 | Param | Meaning | Default | Range |
 |-------|---------|---------|-------|
-| `seed` | RNG seed | `'1'` | any string |
+| `seed` | RNG seed | random (`WS.randomSeed()`) | any string |
 | `zero` | allow `+0` | `1` (on) | `0`/`1` |
 | `bare` | bare equations | 6 | 0–40 |
 | `make` | "make" sentences | 4 | 0–40 |
@@ -84,10 +86,11 @@ URL params, all clamped (see [`conventions.md`](conventions.md) §3):
    opts.push({a:p.a,b:p.b,val:p.a+p.b});
    ```
 
-2. **Marking two element families in one pass (`mark`, ~lines 366–392).** Text inputs are graded by
-   `parseAnswer` (digits or number words) against `data-answer`; `.match-block`s are graded
-   all-or-nothing across their chips. Each match block counts as **one** point even though it has
-   five buttons — see the shared marking contract.
+2. **Marking is the shared engine.** Submit calls `WS.mark()` with no extras: every text input uses
+   the default numeric kind (`WS.parseNum` — digits or number words), and the `.match-block`s are
+   graded all-or-nothing by `WS.markChips`. Each match block counts as **one** point even though it
+   has five buttons — see the shared marking contract in [`conventions.md`](conventions.md). The page
+   only calls `WS.wireChips()` + `WS.wirePanel(...)`.
 
 3. **Subset dual-state shapes (`shapeSVG`, ~lines 216–223).** One shape kind is drawn twice in the
    same row — `a` filled, `b` outline — by toggling `fill` between `#000` and `#fff`. The circle uses
@@ -119,19 +122,18 @@ function qBond(i){
 }
 ```
 
-Match block marking (all-or-nothing across chips):
+Match-block marking now lives in the shared engine (`WS.markChips`, which scans `.sel-block` and
+`.match-block`); the page just emits the blocks and calls `WS.wireChips()`/`WS.mark()`:
 
 ```javascript
-document.querySelectorAll('.match-block').forEach(b=>{
-  total++; let ok=true;
-  b.querySelectorAll('.chip').forEach(c=>{
-    const should=c.dataset.ok==='1', sel=c.classList.contains('selected');
-    if(sel && should) c.classList.add('correct');
-    else if(sel && !should){ c.classList.add('incorrect'); ok=false; }
-    else if(!sel && should){ c.classList.add('missed'); ok=false; }
-  });
-  if(ok) right++;
+// assets/worksheet.js — all-or-nothing across a block's chips
+b.querySelectorAll('.chip').forEach(c=>{
+  const should=c.dataset.ok==='1', sel=c.classList.contains('selected');
+  if(sel && should) c.classList.add('correct');
+  else if(sel && !should){ c.classList.add('incorrect'); ok=false; }
+  else if(!sel && should){ c.classList.add('missed'); ok=false; }
 });
+if(ok) right++;
 ```
 
 ---

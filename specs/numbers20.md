@@ -2,16 +2,18 @@
 
 **File:** `numbers20.html` · **Shared patterns:** [`conventions.md`](conventions.md)
 
-A self-contained, seed-driven generator for **Numbers to 20** (Unit 6): counting and writing numbers,
-tens and ones, converting between words and numerals, number patterns, comparing, ordering, and
-more/fewer comparisons. Same seed / marking / print model as the rest of the repo.
+A seed-driven generator for **Numbers to 20** (Unit 6), built on the shared `WS` engine (see
+[`conventions.md`](conventions.md)): counting and writing numbers, tens and ones, converting between
+words and numerals, number patterns, comparing, ordering, and more/fewer comparisons. Same seed /
+marking / print model as the rest of the repo.
 
 ---
 
 ## 1. Page structure
 
-- **Control panel** (`.no-print`) — `🔢 Numbers to 20 Worksheet Generator`, seed field, eight count
-  fields, standard button row.
+- **Control panel** — a collapsible `<details id="ws-panel">` (auto-collapses on phones) titled
+  `🔢 Numbers to 20 Worksheet — options`, seed field, eight count fields (each with a `data-tip`
+  tooltip), standard button row.
 - **Header** — `Numbers to 20`, meta line, Name/Date row.
 - **Body** — eight sections in fixed order (Count → Tens & ones → Words → Match → Patterns → Compare →
   Order → More/fewer). Empty counts hide their headings.
@@ -41,7 +43,7 @@ URL params, all clamped:
 
 | Param | Section | Default | Range |
 |-------|---------|---------|-------|
-| `seed` | RNG seed | `'1'` | any string |
+| `seed` | RNG seed | random (`WS.randomSeed()`) | any string |
 | `count` | Count & write | 3 | 0–20 |
 | `tens` | Tens and ones | 3 | 0–20 |
 | `words` | Words/numerals | 4 | 0–20 |
@@ -76,13 +78,16 @@ URL params, all clamped:
    A" — and the answer is `big - small`. (Wording is correct by construction; never "more" of the
    smaller group.)
 
-5. **Flexible answer parsing (`parseNum`).** One numeric kind for every input: accepts a digit string or
-   a number-word `zero…twenty`. "Write in words" stores the *word* as `data-answer`; both sides run
-   through `parseNum`, so typing `17` or `seventeen` both match — lenient by design.
+5. **Flexible answer parsing (shared `WS.parseNum`).** Every input uses the engine's default numeric
+   kind — no `data-kind`, no page-local parser. `WS.parseNum` accepts a digit string or a number-word
+   (`WS.NUMWORD`, 0–25). "Write in words" stores the *word* as `data-answer`; both sides run through
+   `WS.parseNum`, so typing `17` or `seventeen` both match — lenient by design. The page reuses
+   `WS.NUMWORD` for generation too (`gWords`, `gMatch`), and marking is just `WS.mark()`.
 
    ```javascript
+   // assets/worksheet.js
    function parseNum(s){ s=(s||'').toLowerCase().trim(); if(s==='')return NaN;
-     if(/^\d+$/.test(s))return +s; const i=NUMWORD.indexOf(s); return i>=0?i:NaN; }
+     if(/^\d+$/.test(s))return Number(s); return (s in WMAP)?WMAP[s]:NaN; }
    ```
 
 ---

@@ -2,17 +2,19 @@
 
 **File:** `shapes.html` · **Shared patterns:** [`conventions.md`](conventions.md)
 
-A self-contained, seed-driven generator for shapes practice — rectangle, square, circle, triangle,
-half circle, quarter circle. Nine exercise types covering naming, counting, grouping, decomposing,
-colour-matching, object→shape, an interactive **copy-the-figure-on-a-grid** exercise, and two
-print-only drawing tasks. The most graphically rich generator: shapes are drawn as inline SVG, not
-emoji, and it introduces a third gradable type (the grid).
+A seed-driven generator for shapes practice — rectangle, square, circle, triangle, half circle,
+quarter circle — built on the shared `WS` engine (see [`conventions.md`](conventions.md)). Nine
+exercise types covering naming, counting, grouping, decomposing, colour-matching, object→shape, an
+interactive **copy-the-figure-on-a-grid** exercise, and two print-only drawing tasks. The most
+graphically rich generator: shapes are drawn as inline SVG, not emoji, and it adds two **custom
+markers** (the order-independent compose pair and the grid) on top of the shared marking.
 
 ---
 
 ## 1. Page structure
 
-- **Control panel** (`.no-print`) — `🔷 Shapes Worksheet Generator`, seed field, nine count fields,
+- **Control panel** — a collapsible `<details id="ws-panel">` (auto-collapses on phones) titled
+  `🔷 Shapes Worksheet — options`, seed field, nine count fields (each with a `data-tip` tooltip),
   standard button row.
 - **Header** — `Shapes Practice`, meta line, Name/Date row.
 - **Body** — nine sections in fixed order (Name → Match → Count → Group → Compose → Object → Grid →
@@ -48,7 +50,7 @@ URL params, all clamped:
 
 | Param | Section | Default | Range |
 |-------|---------|---------|-------|
-| `seed` | RNG seed | `'1'` | any string |
+| `seed` | RNG seed | random (`WS.randomSeed()`) | any string |
 | `name` | Name the shape | 4 | 0–20 |
 | `match` | Colour-match | 2 | 0–20 |
 | `count` | Count | 1 | 0–10 |
@@ -77,8 +79,13 @@ function segKey(a,b){                       // a,b are [gx,gy] grid coords
 }
 ```
 
+The grid is graded by a **custom marker** the page hands to the shared engine as an *extra*:
+`WS.mark({ skip: inp => inp.closest('[data-compose]'), extras: [composeExtra, gridExtra] })`. Each
+extra returns `{total, right}` and paints its own DOM; `gridExtra` is:
+
 ```javascript
-document.querySelectorAll('svg[data-grid]').forEach(svg=>{
+function gridExtra(){                        // returns {total,right}; passed to WS.mark as an extra
+  document.querySelectorAll('svg[data-grid]').forEach(svg=>{
   total++; const st=gridState[svg.id];
   const tset=new Set(st.segs.map(s=>segKey(s[0],s[1])));   // target
   const uset=new Set(st.user.map(s=>segKey(s.a,s.b)));     // drawn
@@ -97,13 +104,16 @@ each target line endpoint, and clicks them in pairs (see [`verify.md`](verify.md
 
 ### Other tricky bits
 
-- **Order-independent decompose marking (`gCompose`).** Two name inputs accepted in either order:
-  `JSON.stringify([...ans].sort()) === JSON.stringify([...got].sort())`, with per-input partial credit
-  as a fallback.
+- **Order-independent decompose marking (`composeExtra`).** The other custom marker. Two name inputs
+  accepted in either order: `JSON.stringify([...ans].sort()) === JSON.stringify([...got].sort())`,
+  with per-input partial credit as a fallback. Its inputs are excluded from the generic pass by the
+  `skip: inp => inp.closest('[data-compose]')` predicate so they aren't double-counted.
 - **Answer normalisation (`SYN`).** Lowercases, maps synonyms ("semicircle"→"half circle"), strips a
-  trailing `s`. Forgiving, but would accept odd variants if a hyphen sneaks in.
-- **Colour-match & group are all-or-nothing chip blocks** (`.sel-block`) — one point each, marked
-  correct only if every right chip is selected and no wrong one is.
+  trailing `s`. Registered as the `name` answer-kind via `WS.addKind('name', (v,a)=>SYN(v)===SYN(a))`
+  so the non-compose name inputs grade through the shared engine. Forgiving, but would accept odd
+  variants if a hyphen sneaks in.
+- **Colour-match & group are all-or-nothing chip blocks** (`.sel-block`, graded by the shared
+  `WS.markChips`) — one point each, correct only if every right chip is selected and no wrong one is.
 - **Print vs. mark ordering.** Marks are applied as CSS classes on existing DOM, so the child must
   Submit *before* printing to get marks on paper; `.gline.missing` ghosts are hidden in print.
 
