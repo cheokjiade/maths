@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Worksheet Generator</title>
+<link rel="stylesheet" href="assets/worksheet.css">
+<style>
+  /* time-specific components */
+  .clock { width:138px; height:138px; flex:0 0 auto; touch-action:none; }
+  .clock text { font-family:inherit; }
+  .clockset { display:inline-flex; flex-direction:column; align-items:center; gap:4px; padding:6px; border:2px solid transparent; border-radius:12px; }
+  .clockset.correct { border-color:#1c9e57; background:#e9f8ef; }
+  .clockset.incorrect { border-color:#e23b3b; background:#fdecec; }
+  .clockset .correction { font-size:12pt; color:#1c9e57; font-weight:bold; }
+  .qrow { display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+  .qcol { display:flex; flex-direction:column; gap:8px; }
+  input.txt { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:90px; }
+  input.short { width:54px; }
+  .clocks { display:flex; flex-wrap:wrap; gap:14px; }
+  .grab { cursor:grab; }
+</style>
+</head>
+<body>
+<details class="panel no-print" id="ws-panel" open>
+  <summary>🕐 Time Worksheet — options <span style="font-weight:normal;font-size:10pt;color:#666;">(to 5 minutes)</span></summary>
+  <div class="panel-body">
+    <div class="backlink"><a href="index.html">&larr; All worksheets</a></div>
+    <div class="fields">
+      <label data-tip="A word or number that makes the worksheet. Same seed = same sheet; blank = random.">Seed <input type="text" id="f-seed" placeholder="random"></label>
+      <label data-tip="Read a clock and write the time (e.g. 3:25).">Read clock <input type="number" id="f-read" min="0" max="20"></label>
+      <label data-tip="Drag or tap the hands to show a given time.">Set hands <input type="number" id="f-sethands" min="0" max="20"></label>
+      <label data-tip="Write how many minutes after the hour, and the time.">Minutes after <input type="number" id="f-after" min="0" max="20"></label>
+      <label data-tip="Tap the digital time that matches the clock.">Match <input type="number" id="f-match" min="0" max="20"></label>
+      <label data-tip="Choose a.m. or p.m. from the sentence.">a.m./p.m. <input type="number" id="f-ampm" min="0" max="20"></label>
+      <label data-tip="Work out the time after a duration (half an hour / 1 hour later).">Duration <input type="number" id="f-duration" min="0" max="20"></label>
+    </div>
+    <div class="btns">
+      <button class="go" id="b-apply">Generate</button>
+      <button id="b-random">🎲 Random seed</button>
+      <button class="primary" id="b-submit">✅ Submit &amp; Mark</button>
+      <button id="b-reset">Clear answers</button>
+      <button id="b-print">🖨️ Print</button>
+    </div>
+    <div class="hint">Write time as "3:25". For "Set the hands", drag a hand or tap the number / minute mark. Same seed + settings = same worksheet.</div>
+  </div>
+</details>
+<div class="score" id="score"></div>
+<h1>Telling Time</h1>
+<div class="meta-line" id="meta"></div>
+<div class="name-row"><div>Name: <span></span></div><div>Date: <span></span></div></div>
+<div id="sheet"></div>
+<div class="footer">Tick-tock! 🕐🕤🕧</div>
+
+<script src="assets/worksheet.js"></script>
+<script>
+"use strict";
+const cfg={ seed:WS.Q.get('seed')||WS.randomSeed(),
+  read:WS.clamp(WS.toInt(WS.Q.get('read'),4),0,20), sethands:WS.clamp(WS.toInt(WS.Q.get('sethands'),4),0,20),
+  after:WS.clamp(WS.toInt(WS.Q.get('after'),3),0,20), match:WS.clamp(WS.toInt(WS.Q.get('match'),4),0,20),
+  ampm:WS.clamp(WS.toInt(WS.Q.get('ampm'),4),0,20), duration:WS.clamp(WS.toInt(WS.Q.get('duration'),4),0,20) };
+const rng=WS.makeRng(cfg.seed);
+const { randInt, pick, shuffle, distinct, balanced } = WS.helpers(rng);
+
+/* ---------- time helpers ---------- */
+const STEPS=[0,5,10,15,20,25,30,35,40,45,50,55];
+const pad2=n=>('0'+n).slice(-2);
+const fmt=(h,m)=>h+':'+pad2(m);
+function normTime(s){ s=(s||'').trim().toLowerCase().replace(/[^\d:]/g,''); let mt=s.match(/^(\d{1,2}):(\d{1,2})$/);
+  let h,m; if(mt){ h=+mt[1]; m=+mt[2]; } else { mt=s.match(/^(\d{1,2})(\d{2})$/); if(!mt) return 'x'+s; h=+mt[1]; m=+mt[2]; }
+  return (h%12)+':'+pad2(m%60); }
+// distinct (h,m) per section so no two questions are identical
+function distinctTimes(){ const used=new Set(); return ()=>{ let h,m,k,g=0; do{ h=randInt(1,12); m=pick(STEPS); k=h+':'+m; } while(used.has(k)&&g++<120); used.add(k); return {h,m}; }; }
+const readT=distinctTimes(), setT=distinctTimes(), afterT=distinctTimes(), matchT=distinctTimes(), durT=distinctTimes();
+
+/* ---------- clock drawing ---------- */
+const RAD=d=>d*Math.PI/180;
+const tip=(deg,len)=>[50+len*Math.sin(RAD(deg)), 50-len*Math.cos(RAD(deg))];
+function handLine(deg,len,w,color,extra){ const [x,y]=tip(deg,len); return '<line x1="50" y1="50" x2="'+x.toFixed(2)+'" y2="'+y.toFixed(2)+'" stroke="'+(color||'#000')+'" stroke-width="'+w+'" stroke-linecap="round" '+(extra||'')+'/>'; }
+function clockFace(){
+  let s='<circle cx="50" cy="50" r="46" fill="#fff" stroke="#000" stroke-width="2.5"/>';
+  for(let i=0;i<60;i++){ const big=i%5===0; const [x1,y1]=tip(i*6,big?40:43), [x2,y2]=tip(i*6,46);
+    s+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#000" stroke-width="'+(big?1.4:0.6)+'"/>'; }
+  for(let n=1;n<=12;n++){ const [x,y]=tip(n*30,33); s+='<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="middle" dominant-baseline="central" font-size="9">'+n+'</text>'; }
+  return s;
+}
+// static clock that DISPLAYS a time (hour hand reflects the minutes, like a real clock)
+function readClock(h,m){
+  const ma=m*6, ha=(h%12)*30+m*0.5;
+  return '<svg class="clock" viewBox="0 0 100 100">'+clockFace()
+    +handLine(ha,24,3)+handLine(ma,34,2)+'<circle cx="50" cy="50" r="2.4" fill="#000"/></svg>';
+}
+
+/* ---------- interactive set-the-hands clock ---------- */
+const clockState={}; let cid=0;
+function setClock(ansH,ansM){
+  const id='c'+(cid++); clockState[id]={h:12,m:0,ansH,ansM};
+  let ticks='';
+  for(let n=1;n<=12;n++){ const [x,y]=tip(n*30,30); ticks+='<circle class="htick" data-h="'+n+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7" fill="transparent" pointer-events="all"/>'; }
+  STEPS.forEach(mm=>{ const [x,y]=tip(mm*6,46); ticks+='<circle class="mtick" data-m="'+mm+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="6" fill="transparent" pointer-events="all"/>'; });
+  return '<div class="clockset" data-cid="'+id+'" data-ans-h="'+ansH+'" data-ans-m="'+ansM+'">'
+    +'<svg class="clock" viewBox="0 0 100 100">'+clockFace()+ticks+'<g class="hands"></g><circle cx="50" cy="50" r="2.4" fill="#000"/></svg></div>';
+}
+function redrawClock(id){ const st=clockState[id]; const el=document.querySelector('.clockset[data-cid="'+id+'"]'); if(!el) return;
+  const g=el.querySelector('.hands'); const ma=st.m*6, ha=(st.h%12)*30+st.m*0.5;
+  g.innerHTML=handLine(ha,24,3)+handLine(ma,34,2)+handLine(ha,24,10,'transparent','class="grab" data-hand="h"')+handLine(ma,34,10,'transparent','class="grab" data-hand="m"'); }
+function enableClock(id){
+  const el=document.querySelector('.clockset[data-cid="'+id+'"]'); const svg=el.querySelector('svg'); const st=clockState[id];
+  el.querySelectorAll('.htick').forEach(t=>t.addEventListener('click',()=>{ st.h=+t.dataset.h; redrawClock(id); }));
+  el.querySelectorAll('.mtick').forEach(t=>t.addEventListener('click',()=>{ st.m=+t.dataset.m; redrawClock(id); }));
+  function localAngle(ev){ const vb=svg.viewBox.baseVal, r=svg.getBoundingClientRect();
+    const x=vb.x+(ev.clientX-r.left)/r.width*vb.width, y=vb.y+(ev.clientY-r.top)/r.height*vb.height;
+    let a=Math.atan2(x-50,50-y)*180/Math.PI; if(a<0)a+=360; return a; }
+  let drag=null;
+  svg.addEventListener('pointerdown',ev=>{ const g=ev.target.closest('.grab'); if(!g) return; drag=g.dataset.hand; try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove',ev=>{ if(!drag) return; const a=localAngle(ev); const snap=Math.round(a/30)%12;
+    if(drag==='h') st.h=(snap===0?12:snap); else st.m=snap*5; redrawClock(id); });
+  svg.addEventListener('pointerup',()=>{ drag=null; });
+  svg.addEventListener('pointercancel',()=>{ drag=null; });
+  redrawClock(id);
+}
+
+/* ---------- input factories ---------- */
+let uid=0;
+const timeIn=ans=>'<span class="field"><input class="txt gradable" data-kind="time" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
+const numIn=ans=>'<span class="field"><input class="txt short gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
+function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join('');
+  return '<div class="sel-block" data-mode="one" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
+
+/* ---------- generators ---------- */
+function gRead(i){ const {h,m}=readT();
+  return '<div class="item"><span class="label">'+i+'.</span> Write the time shown on the clock.<div class="qrow">'+readClock(h,m)
+    +'<div>Time: '+timeIn(fmt(h,m))+'</div></div></div>'; }
+
+function gSet(i){ const {h,m}=setT();
+  return '<div class="item"><span class="label">'+i+'.</span> Show <b>'+fmt(h,m)+'</b> &mdash; drag or tap the hands.<div class="qrow">'+setClock(h,m)+'</div></div>'; }
+
+function gAfter(i){ const {h,m}=afterT();
+  return '<div class="item"><span class="label">'+i+'.</span> Tell the time.<div class="qrow">'+readClock(h,m)
+    +'<div class="qcol"><div>'+numIn(m)+' minutes after '+h+':00</div><div>Time: '+timeIn(fmt(h,m))+'</div></div></div></div>'; }
+
+function gMatch(i){ const {h,m}=matchT();
+  const wrong=new Set([fmt(h,m)]); const opts=[{html:fmt(h,m),ok:true}];
+  let guard=0; while(opts.length<4 && guard++<60){ const wh=randInt(1,12), wm=pick(STEPS); const f=fmt(wh,wm); if(!wrong.has(f)){ wrong.add(f); opts.push({html:f,ok:false}); } }
+  return '<div class="item"><span class="label">'+i+'.</span> Tap the time shown on the clock.<div class="qrow">'+readClock(h,m)+selBlock(shuffle(opts))+'</div></div>'; }
+
+const AMPM=[
+  {t:'Sara eats breakfast in the morning at 7:30',a:'a.m.'},
+  {t:'The school bell rings at 1:30 in the afternoon',a:'p.m.'},
+  {t:'Ben goes to sleep at night at 9:00',a:'p.m.'},
+  {t:'The sun rises early at 6:45 in the morning',a:'a.m.'},
+  {t:'Mum cooks dinner in the evening at 6:30',a:'p.m.'},
+  {t:'We do morning exercises at 8:15',a:'a.m.'},
+  {t:'Dad reads the newspaper after lunch at 2:00',a:'p.m.'},
+  {t:'The rooster crows at dawn at 5:50',a:'a.m.'},
+  {t:'The shop closes late at night at 10:00',a:'p.m.'},
+  {t:'Recess time in school is at 10:20 in the morning',a:'a.m.'},
+];
+const ampmPick=balanced(AMPM);
+function gAmPm(i){ const c=ampmPick(i); const opts=shuffle([{html:'a.m.',ok:c.a==='a.m.'},{html:'p.m.',ok:c.a==='p.m.'}]);
+  return '<div class="item"><span class="label">'+i+'.</span> '+c.t+' '+selBlock(opts)+'</div>'; }
+
+const durPick=balanced(['half','hour']);
+function gDuration(i){ const {h,m}=durT(); const kind=durPick(i); const add= kind==='half'?30:60;
+  const tot=((h%12)*60+m+add)%720; let eh=Math.floor(tot/60); if(eh===0)eh=12; const em=tot%60;
+  const phrase= kind==='half'?'Half an hour':'One hour';
+  return '<div class="item"><span class="label">'+i+'.</span> The time is '+fmt(h,m)+'. '+phrase+' later, it will be '+timeIn(fmt(eh,em))+'.</div>'; }
+
+/* ---------- assemble ---------- */
+function section(t,c,fn){ if(c<=0)return''; let b=''; for(let i=0;i<c;i++) b+=fn(i+1); return '<h2>'+t+'</h2>'+b; }
+let html='';
+html+=section('Write the time shown on each clock.', cfg.read, gRead);
+html+=section('Show the time on each clock (drag or tap the hands).', cfg.sethands, gSet);
+html+=section('Tell the time.', cfg.after, gAfter);
+html+=section('Match the clock to the time.', cfg.match, gMatch);
+html+=section('Fill in a.m. or p.m.', cfg.ampm, gAmPm);
+html+=section('Work out the time after a while.', cfg.duration, gDuration);
+document.getElementById('sheet').innerHTML=html;
+document.getElementById('meta').textContent='seed: '+cfg.seed+'  •  telling time to 5 minutes';
+
+/* ---------- wiring (shared engine + custom set-hands marker) ---------- */
+WS.addKind('time', (v,a)=>normTime(v)===normTime(a));
+Object.keys(clockState).forEach(enableClock);
+function clockExtra(){ let total=0, right=0;
+  document.querySelectorAll('.clockset').forEach(el=>{ total++; const st=clockState[el.dataset.cid]; const ok= st.h===st.ansH && st.m===st.ansM; if(ok)right++;
+    el.classList.toggle('correct',ok); el.classList.toggle('incorrect',!ok);
+    let c=el.querySelector('.correction'); if(!ok){ if(!c){ c=document.createElement('div'); c.className='correction'; el.appendChild(c); } c.textContent='('+fmt(st.ansH,st.ansM)+')'; } else if(c){ c.remove(); } });
+  return { total, right }; }
+function clockClear(){ Object.keys(clockState).forEach(id=>{ clockState[id].h=12; clockState[id].m=0; const el=document.querySelector('.clockset[data-cid="'+id+'"]'); if(el){ el.classList.remove('correct','incorrect'); const c=el.querySelector('.correction'); if(c)c.remove(); } redrawClock(id); }); }
+WS.wireChips();
+WS.wirePanel(cfg, ['read','sethands','after','match','ampm','duration'], {
+  mark:  () => WS.mark({ extras: [clockExtra] }),
+  clear: () => WS.clearAll(clockClear),
+});
+</script>
+</body>
+</html>

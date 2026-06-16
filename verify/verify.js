@@ -25,6 +25,8 @@ const TARGETS = [
   { name: 'within20',    file: 'within20.html', params: 'seed=verify' },
   { name: 'graphs',      file: 'graphs.html',   params: 'seed=verify&read=3&build=1' },
   { name: 'numbers100',  file: 'numbers100.html', params: 'seed=verify' },
+  { name: 'time',        file: 'time.html',
+    params: 'seed=verify&read=2&sethands=2&after=2&match=2&ampm=2&duration=2' },
 ];
 
 // Higher per-section counts used only for duplicate-question detection (each kept <= its pool size,
@@ -39,6 +41,7 @@ const DUP_PARAMS = {
   addition:    'bare=8&make=6&bond=6&pic=6&subset=6&word=4&commute=4&missing=4&count=4&match=4',
   subtraction: 'bare=8&given=6&btk=6&pw=6',
   graphs:      'read=4&build=4',
+  time:        'read=6&sethands=6&after=6&match=6&ampm=8&duration=6',
 };
 
 // Launch installed Chrome/Edge without downloading a browser.
@@ -143,6 +146,15 @@ async function drive(page, url, probe) {
       const tile = await order.$(`.dsource .dtile[data-val="${ans}"]`);
       if (tile) { await tile.click(); await slot.click(); }
     }
+  }
+  // clock set-hands: tap the hour-tick and minute-tick matching the target time
+  for (const cs of await page.$$('.clockset')) {
+    const h = await cs.getAttribute('data-ans-h');
+    const m = await cs.getAttribute('data-ans-m');
+    const ht = await cs.$(`.htick[data-h="${h}"]`);
+    const mt = await cs.$(`.mtick[data-m="${m}"]`);
+    if (ht) await ht.click();
+    if (mt) await mt.click();
   }
   const plan = await page.evaluate(gridPlan);
   const gids = Object.keys(plan);
