@@ -13,7 +13,6 @@
   .qwrap { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
   .eq { font-size:22pt; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
   input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
-  input.wblank { width:90px; }
   .lines { display:flex; flex-direction:column; gap:10px; }
   .obj { width:26px; height:26px; vertical-align:middle; margin:0 1px; }
   /* equal-groups: each box holds M identical icons; G boxes laid in a flowing row */
@@ -102,7 +101,7 @@ function pickNoun(){ const av=NOUNS.filter(n=>!used.has(n.cp)); const arr=av.len
 /* ---------- input factories ---------- */
 const gin=(cls,ans)=>'<span class="field"><input class="'+cls+' gradable" data-answer="'+ans+'" type="text" inputmode="numeric" autocomplete="off"></span>';
 const ansIn=a=>gin('ans',a);
-const wbl=a=>gin('wblank',a);
+const wbl=a=>gin('ans',a);
 const img=cp=>'<img class="obj" src="'+TW(cp)+'" alt="">';
 // G boxes, each with M identical icons
 function groupBoxes(cp,g,m){ let s='<div class="groups">'; for(let i=0;i<g;i++){ let b='<div class="gbox">'; for(let k=0;k<m;k++) b+=img(cp); s+=b+'</div>'; } return s+'</div>'; }
