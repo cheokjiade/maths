@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="assets/worksheet.css">
 <style>
   /* numbers-to-20-specific components */
-  .qrow { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .qrow { display:flex; align-items:center; justify-content:flex-start; gap:18px; flex-wrap:wrap; }
+  /* stacked variant: picture on top, its count sentence/inputs on the line below */
+  .qcol { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
   input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:120px; }
   input.ans.short { width:60px; }
   .pic-box { border:1.5px solid #888; border-radius:6px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; max-width:60%; }
@@ -97,7 +99,7 @@ function selBlock(mode,opts){ const id='s'+(uid++); const chips=opts.map(o=>'<bu
 
 /* ---- generators ---- */
 function gCount(i){ const o=pickObj(); const N=randInt(11,20);
-  return '<div class="item"><span class="label">'+i+'.</span> Count and write the number.<div class="qrow"><div class="pic-box">'+grp(o.cp,N)+'</div><div>There are '+ansIn(N,true)+' '+o.many+'.</div></div></div>'; }
+  return '<div class="item"><span class="label">'+i+'.</span> Count and write the number.<div class="qcol"><div class="pic-box">'+grp(o.cp,N)+'</div><div>There are '+ansIn(N,true)+' '+o.many+'.</div></div></div>'; }
 function gTens(i){ const ones=randInt(1,9); const N=10+ones; const o=pickObj();
   const pic='<div class="qrow"><div class="tenblock">'+grp(o.cp,10)+'</div><span style="font-size:20pt;">and</span><div class="pic-box" style="max-width:30%;">'+grp(o.cp,ones)+'</div></div>';
   const eq= tensKind(i)==='make' ? '10 and '+ones+' make '+ansIn(N,true) : '10 + '+ones+' = '+ansIn(N,true);
