@@ -25,7 +25,7 @@
   .vlabel { margin-top:5px; font-size:12pt; font-weight:bold; border-top:1px solid #999; padding-top:4px; min-width:58px; text-align:center; }
   .subq { margin:6px 0; }
   /* build-the-graph */
-  .buildgraph { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; margin:8px 0; }
+  .buildgraph { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; margin:8px 0; }
   .bg-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
   .bg-cells { display:flex; flex-direction:column-reverse; border:1.5px solid #888; }
   .cell { width:30px; height:22px; border:1px solid #ccc; background:#fff; cursor:pointer; padding:0; }
@@ -124,11 +124,11 @@ function renderGraphH(cats, cellFn){ let rows=''; cats.forEach(c=>{ let cells=''
 function renderGraphV(cats, cellFn){ let cols=''; cats.forEach(c=>{ let cells=''; for(let z=0;z<c.count;z++) cells+='<div class="vcell">'+cellFn(c)+'</div>'; cols+='<div class="vcol"><div class="vstack">'+cells+'</div><div class="vlabel">'+c.label+'</div></div>'; }); return '<div class="vgraph">'+cols+'</div>'; }
 
 /* ---- read a picture graph ---- */
-function renderRead(i, th){
+function renderRead(i, th, vertical){
   const k=pick([3,4]); const counts=distinct(k,2,8);
   const cats=shuffle(th.cats).slice(0,k).map((c,j)=>Object.assign({},c,{count:counts[j]}));
   const cellFn = th.style==='symbol' ? (function(){ return symbolSVG(th.symbol); }) : (function(c){ return img(c.cp); });
-  const graph = (rng()<0.5 ? renderGraphV : renderGraphH)(cats, cellFn);
+  const graph = (vertical ? renderGraphV : renderGraphH)(cats, cellFn);
   const key = th.style==='symbol' ? '<div class="gkey">Each '+symbolSVG(th.symbol)+' stands for 1 '+th.item.s+'.</div>' : '';
   const total=cats.reduce((s,c)=>s+c.count,0);
   const maxC=cats.reduce((a,b)=>b.count>a.count?b:a), minC=cats.reduce((a,b)=>b.count<a.count?b:a);
@@ -151,8 +151,9 @@ function renderRead(i, th){
   else { qs+='<div class="subq">There are the most '+mostBlk+'.</div>'; qs+='<div class="subq">There are the fewest '+fewBlk+'.</div>'; }
   return '<div class="item"><span class="label">'+i+'.</span> Read the graph, then fill in the blanks (tap a word for the most/fewest).'+graph+key+qs+'</div>';
 }
-function gReadObject(i){ return renderRead(i, objPick(i)); }
-function gReadSymbol(i){ return renderRead(i, symPick(i)); }
+// orientation is spread, not random: horizontal graph(s) first, then vertical — within each section
+function gReadObject(i){ return renderRead(i, objPick(i), i > Math.ceil(cfg.readobj/2)); }
+function gReadSymbol(i){ return renderRead(i, symPick(i), i > Math.ceil(cfg.readsym/2)); }
 
 /* ---- build a graph (shade cells) ---- */
 function gBuild(i){
