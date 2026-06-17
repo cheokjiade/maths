@@ -25,14 +25,21 @@ curves, real-world benchmarks, and a print-only draw-a-line section — all rend
 
 ## 2. Visuals (all inline SVG, no library)
 
+- **`drawObjH(kind, x, cy, L)` / `drawObjV(kind, cx, baseY, H, w)`** — draw a recognisable object
+  (pencil, crayon, marker, ribbon, straw, stick, nail, candle, spoon, eraser, rope, lace / tree,
+  tower, bottle, lamp) occupying **exactly** the given length, so every ruler reading and unit count
+  stays honest. A rounded-bar fallback covers any unknown kind.
 - **`rulerSVG(maxCm, bars)`** — a yellow ruler body with major cm ticks, numbers, and minor half-cm
-  ticks; coloured bars sit above it with dashed drop-lines to their cm reading.
-- **`barsSVG(rows, vertical)`** — free-standing comparison bars, either horizontal (left-anchored,
-  labelled on the left) or vertical (bottom-anchored, labelled below a baseline).
-- **`nonstdSVG(obj, unit, K)`** — a coloured bar representing the object above a row of K inline
-  unit-icons (paper clips / beans / cubes / matchsticks, each drawn as a small SVG element).
+  ticks; each object **shape** (`bar.kind`) sits above it, aligned to whole cm, with a dashed
+  drop-line to its reading.
+- **`barsSVG(rows, vertical, kind)`** — free-standing comparison **object shapes**, horizontal
+  (left-anchored, A–D labels on the left) or vertical (bottom-anchored, labels below a baseline).
+- **`nonstdSVG(obj, unit, K, kind)`** — the object **shape** above a row of K inline unit-icons
+  (paper clips / beans / cubes / matchsticks, each a small SVG element).
 - **`curvesSVG(rows)`** — three same-span paths labelled A–C: `straight` (flat), `scalloped`
   (sinusoidal with amplitude 12 px), `zigzag` (amplitude 18 px). End-dots mark the shared endpoints.
+- **Layout:** each visual is a `display:block; width:fit-content` box (`.barwrap`/`.nonstdwrap`), so it
+  sits on its **own line below the question text**, not beside it.
 
 ---
 

@@ -26,7 +26,8 @@
   .unit-ico { stroke:#000; stroke-width:1.6; }
   /* curves */
   .cpath { fill:none; stroke:#000; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
-  .barwrap, .curvewrap, .nonstdwrap { border:1.5px solid #aaa; border-radius:8px; padding:8px 10px; display:inline-block; background:#fff; }
+  .curvewrap { border:1.5px solid #aaa; border-radius:8px; padding:8px 10px; display:inline-block; background:#fff; }
+  .barwrap, .nonstdwrap { border:1.5px solid #aaa; border-radius:8px; padding:8px 10px; display:block; width:fit-content; max-width:100%; background:#fff; }
   .blanks { margin-top:8px; font-size:14pt; }
   .blanks div { margin:6px 0; }
   /* draw-a-line (print-only): a baseline with a start dot to draw from with a ruler */
@@ -99,6 +100,144 @@ const ansIn=ans=>'<span class="field"><input class="ans gradable" data-answer="'
 const letterIn=ans=>'<span class="field"><input class="txt short gradable" data-kind="letter" data-answer="'+ans+'" type="text" autocomplete="off"></span>';
 function selBlock(opts){ const id='s'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="sel-block" data-mode="one" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
 
+/* ---------- SVG object shapes (exact length-preserving) ----------
+   drawObjH(kind, x, cy, L): the object occupies EXACTLY [x, x+L] horizontally,
+   centred on cy. The drawn extent equals L so any ruler reading / unit count
+   stays honest. drawObjV(kind, cx, baseY, H, w): occupies EXACTLY [baseY-H, baseY].
+   Helpers below clamp tiny pieces so even short objects stay recognizable. */
+const _n=(v)=>Math.round(v*100)/100;            // tidy numbers in the SVG markup
+function drawObjH(kind, x, cy, L){
+  const x0=_n(x), x1=_n(x+L), cyR=_n(cy);
+  const fb=(fill,h)=>{ h=h||13; const y=_n(cy-h/2); return '<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="'+_n(Math.min(4,h/2))+'" fill="'+fill+'" stroke="#000" stroke-width="2"/>'; };
+  let g='<g>';
+  switch(kind){
+    case 'pencil': {
+      const h=14, y=_n(cy-h/2), tip=_n(Math.min(0.34*L,16)), er=_n(Math.min(0.13*L,8));
+      const bodyX0=_n(x+er), bodyX1=_n(x1-tip), pt=_n(Math.min(tip*0.45,7));
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+er+'" height="'+h+'" rx="2" fill="#f6a9c0" stroke="#000" stroke-width="1.4"/>';        // pink eraser end
+      g+='<rect x="'+_n(x+er)+'" y="'+y+'" width="3.2" height="'+h+'" fill="#cfcfcf" stroke="#000" stroke-width="0.8"/>';            // metal ferrule
+      g+='<rect x="'+bodyX0+'" y="'+y+'" width="'+_n(bodyX1-bodyX0)+'" height="'+h+'" fill="#f4c430" stroke="#000" stroke-width="1.6"/>'; // yellow body
+      g+='<line x1="'+bodyX0+'" y1="'+_n(cy-2)+'" x2="'+bodyX1+'" y2="'+_n(cy-2)+'" stroke="#d6a400" stroke-width="1.2"/>';           // body shade line
+      g+='<path d="M'+bodyX1+','+y+' L'+_n(x1-pt)+','+y+' L'+x1+','+cyR+' L'+_n(x1-pt)+','+_n(cy+h/2)+' L'+bodyX1+','+_n(cy+h/2)+' Z" fill="#e9c48a" stroke="#000" stroke-width="1.4"/>'; // wood cone
+      g+='<path d="M'+_n(x1-pt)+','+y+' L'+x1+','+cyR+' L'+_n(x1-pt)+','+_n(cy+h/2)+' Z" fill="#3a3a3a"/>';                              // graphite point
+      break; }
+    case 'crayon': {
+      const h=14, y=_n(cy-h/2), tip=_n(Math.min(0.22*L,12)), bodyX1=_n(x1-tip);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(bodyX1-x0)+'" height="'+h+'" rx="2.5" fill="#e0584e" stroke="#000" stroke-width="1.6"/>'; // body
+      g+='<rect x="'+_n(x0+0.18*L)+'" y="'+y+'" width="'+_n(Math.min(8,0.1*L))+'" height="'+h+'" fill="#f7d6cf" stroke="#000" stroke-width="0.8"/>'; // paper band
+      g+='<rect x="'+_n(bodyX1-Math.min(8,0.1*L)-2)+'" y="'+y+'" width="'+_n(Math.min(8,0.1*L))+'" height="'+h+'" fill="#f7d6cf" stroke="#000" stroke-width="0.8"/>';
+      g+='<path d="M'+bodyX1+','+y+' L'+x1+','+cyR+' L'+bodyX1+','+_n(cy+h/2)+' Z" fill="#c8463d" stroke="#000" stroke-width="1.4"/>';   // tip
+      break; }
+    case 'marker': {
+      const h=15, y=_n(cy-h/2), collar=_n(Math.min(0.12*L,9)), tip=_n(Math.min(0.16*L,11));
+      const bodyX1=_n(x1-collar-tip), colX1=_n(x1-tip);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(bodyX1-x0)+'" height="'+h+'" rx="3" fill="#5aa9e0" stroke="#000" stroke-width="1.6"/>'; // body
+      g+='<rect x="'+bodyX1+'" y="'+_n(cy-h/2-1)+'" width="'+_n(colX1-bodyX1)+'" height="'+_n(h+2)+'" rx="1.5" fill="#2c6fa3" stroke="#000" stroke-width="1.4"/>'; // darker collar
+      g+='<path d="M'+colX1+','+_n(cy-4)+' L'+x1+','+cyR+' L'+colX1+','+_n(cy+4)+' Z" fill="#333" stroke="#000" stroke-width="1.2"/>';   // felt tip
+      break; }
+    case 'ribbon': {
+      const h=15, y=_n(cy-h/2), notch=_n(Math.min(0.16*L,12));
+      g+='<path d="M'+x0+','+y+' L'+_n(x1)+','+y+' L'+_n(x1)+','+_n(cy+h/2)+' L'+x0+','+_n(cy+h/2)+' L'+_n(x0+notch)+','+cyR+' Z" fill="#e36fa6" stroke="#000" stroke-width="1.8"/>'; // band w/ swallowtail V-notch at left
+      g+='<line x1="'+_n(x0+notch+3)+'" y1="'+cyR+'" x2="'+_n(x1-4)+'" y2="'+cyR+'" stroke="#b34d80" stroke-width="1.4"/>';
+      break; }
+    case 'straw': {
+      const h=11, y=_n(cy-h/2);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="'+_n(h/2)+'" fill="#7ec8e3" stroke="#000" stroke-width="1.6"/>'; // tube
+      g+='<line x1="'+_n(x0+3)+'" y1="'+_n(cy-2.5)+'" x2="'+_n(x1-3)+'" y2="'+_n(cy-2.5)+'" stroke="#ffffff" stroke-width="1.6" opacity="0.8"/>'; // highlight
+      break; }
+    case 'stick': {
+      const h=12, y=_n(cy-h/2);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="'+_n(h/2)+'" fill="#9c6b3f" stroke="#000" stroke-width="1.8"/>'; // brown rod
+      g+='<ellipse cx="'+_n(x0+0.32*L)+'" cy="'+cyR+'" rx="2.4" ry="3.4" fill="#774f2c"/>';   // nub marks
+      g+='<ellipse cx="'+_n(x0+0.66*L)+'" cy="'+_n(cy-1)+'" rx="2" ry="3" fill="#774f2c"/>';
+      break; }
+    case 'nail': {
+      const h=12, headR=_n(Math.min(h/2+1,7)), shaftH=4, sy=_n(cy-shaftH/2);
+      const tip=_n(Math.min(0.14*L,9)), shaftX1=_n(x1-tip), headX=_n(x0+headR);
+      g+='<rect x="'+headX+'" y="'+sy+'" width="'+_n(shaftX1-headX)+'" height="'+shaftH+'" fill="#b8c0c8" stroke="#000" stroke-width="1.2"/>'; // thin shaft
+      g+='<path d="M'+shaftX1+','+sy+' L'+x1+','+cyR+' L'+shaftX1+','+_n(cy+shaftH/2)+' Z" fill="#9aa3ac" stroke="#000" stroke-width="1"/>'; // pointed tip
+      g+='<ellipse cx="'+headX+'" cy="'+cyR+'" rx="'+headR+'" ry="'+_n(h/2)+'" fill="#cfd6dc" stroke="#000" stroke-width="1.6"/>';        // round flat head
+      break; }
+    case 'candle': {
+      const h=15, y=_n(cy-h/2);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="2" fill="#f3ead2" stroke="#000" stroke-width="1.6"/>';          // waxy body
+      g+='<line x1="'+x1+'" y1="'+cyR+'" x2="'+_n(x1+4)+'" y2="'+cyR+'" stroke="#5a4a2a" stroke-width="1.4"/>';                            // wick
+      g+='<path d="M'+_n(x1+4)+','+cyR+' q5,-5 0,-9 q-5,4 0,9 Z" fill="#ffb02e" stroke="#e07a00" stroke-width="0.8"/>';                    // flame
+      g+='<line x1="'+_n(x0+3)+'" y1="'+y+'" x2="'+_n(x1-3)+'" y2="'+y+'" stroke="#ddd0ac" stroke-width="1"/>';
+      break; }
+    case 'spoon': {
+      const h=14, bowlW=_n(Math.min(0.34*L,20)), bowlX1=_n(x0+bowlW), hy=_n(cy-2);
+      g+='<rect x="'+bowlX1+'" y="'+hy+'" width="'+_n(x1-bowlX1)+'" height="4" rx="2" fill="#cdd2d6" stroke="#000" stroke-width="1.4"/>'; // thin handle
+      g+='<ellipse cx="'+_n(x0+bowlW/2)+'" cy="'+cyR+'" rx="'+_n(bowlW/2)+'" ry="'+_n(h/2)+'" fill="#e4e8ec" stroke="#000" stroke-width="1.8"/>'; // oval bowl
+      g+='<ellipse cx="'+_n(x0+bowlW/2)+'" cy="'+cyR+'" rx="'+_n(bowlW/2-3)+'" ry="'+_n(h/2-2.5)+'" fill="none" stroke="#b9c0c6" stroke-width="1"/>';
+      break; }
+    case 'eraser': {
+      const h=15, y=_n(cy-h/2);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="3.5" fill="#f49ac1" stroke="#000" stroke-width="1.8"/>';        // pink rounded block
+      g+='<line x1="'+x0+'" y1="'+_n(cy+1)+'" x2="'+x1+'" y2="'+_n(cy+1)+'" stroke="#d96f9e" stroke-width="1.2"/>';                        // shade seam
+      break; }
+    case 'rope': {
+      const h=13, y=_n(cy-h/2);
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+_n(L)+'" height="'+h+'" rx="'+_n(h/2)+'" fill="#d9b67a" stroke="#000" stroke-width="1.6"/>'; // tan rope
+      let tw=''; for(let tx=x0+4; tx<x1-2; tx+=7){ tw+='<line x1="'+_n(tx)+'" y1="'+_n(cy-h/2+1)+'" x2="'+_n(tx+5)+'" y2="'+_n(cy+h/2-1)+'" stroke="#a8854c" stroke-width="1.4"/>'; }
+      g+=tw;   // diagonal twist marks
+      break; }
+    case 'lace': {
+      const h=7, y=_n(cy-h/2), cap=_n(Math.min(0.1*L,7));
+      g+='<rect x="'+_n(x0+cap)+'" y="'+y+'" width="'+_n(L-2*cap)+'" height="'+h+'" rx="'+_n(h/2)+'" fill="#c8b89a" stroke="#000" stroke-width="1.4"/>'; // thin cord
+      g+='<rect x="'+x0+'" y="'+y+'" width="'+cap+'" height="'+h+'" rx="1.5" fill="#444" stroke="#000" stroke-width="1"/>';                  // aglet caps
+      g+='<rect x="'+_n(x1-cap)+'" y="'+y+'" width="'+cap+'" height="'+h+'" rx="1.5" fill="#444" stroke="#000" stroke-width="1"/>';
+      break; }
+    case 'leaf': {
+      const h=16, midX=_n(x0+L/2);
+      g+='<path d="M'+x0+','+cyR+' Q'+midX+','+_n(cy-h/2)+' '+x1+','+cyR+' Q'+midX+','+_n(cy+h/2)+' '+x0+','+cyR+' Z" fill="#7fbf5f" stroke="#000" stroke-width="1.6"/>'; // leaf blade
+      g+='<line x1="'+x0+'" y1="'+cyR+'" x2="'+x1+'" y2="'+cyR+'" stroke="#4f8a3a" stroke-width="1.4"/>';                                   // midrib
+      break; }
+    case 'feather': {
+      const h=16, midX=_n(x0+L/2);
+      g+='<path d="M'+x0+','+cyR+' Q'+midX+','+_n(cy-h/2)+' '+x1+','+cyR+' Q'+midX+','+_n(cy+h/2)+' '+x0+','+cyR+' Z" fill="#bcdcef" stroke="#000" stroke-width="1.4"/>'; // vane
+      g+='<line x1="'+x0+'" y1="'+cyR+'" x2="'+x1+'" y2="'+cyR+'" stroke="#5a7a90" stroke-width="1.6"/>';                                   // shaft
+      break; }
+    default: g+=fb(PALETTE[0]);    // fallback: rounded coloured bar
+  }
+  g+='</g>'; return g;
+}
+function drawObjV(kind, cx, baseY, H, w){
+  const top=_n(baseY-H), b=_n(baseY), cxR=_n(cx), ww=w||34;
+  let g='<g>';
+  switch(kind){
+    case 'tree': {
+      const trunkW=_n(Math.min(ww*0.28,14)), folH=_n(H*0.72), trunkTop=_n(top+folH);
+      g+='<rect x="'+_n(cx-trunkW/2)+'" y="'+trunkTop+'" width="'+trunkW+'" height="'+_n(b-trunkTop)+'" fill="#9c6b3f" stroke="#000" stroke-width="1.6"/>'; // trunk
+      g+='<path d="M'+cxR+','+top+' L'+_n(cx-ww/2)+','+_n(trunkTop+6)+' L'+_n(cx+ww/2)+','+_n(trunkTop+6)+' Z" fill="#5fae4f" stroke="#000" stroke-width="1.6"/>'; // triangular foliage
+      break; }
+    case 'tower': {
+      const cren=_n(Math.min(H*0.12,14)), bodyTop=_n(top+cren), n=4, cw=_n(ww/(2*n-1));
+      g+='<rect x="'+_n(cx-ww/2)+'" y="'+bodyTop+'" width="'+ww+'" height="'+_n(b-bodyTop)+'" fill="#cdb48a" stroke="#000" stroke-width="1.8"/>'; // body
+      for(let k=0;k<n;k++){ const bx=_n(cx-ww/2+k*2*cw); g+='<rect x="'+bx+'" y="'+top+'" width="'+cw+'" height="'+cren+'" fill="#cdb48a" stroke="#000" stroke-width="1.6"/>'; } // crenellations
+      const dw=_n(ww*0.34), dh=_n((b-bodyTop)*0.5);
+      g+='<rect x="'+_n(cx-dw/2)+'" y="'+_n(b-dh)+'" width="'+dw+'" height="'+dh+'" rx="'+_n(dw/2)+'" fill="#7a5a32" stroke="#000" stroke-width="1.4"/>'; // arched door
+      break; }
+    case 'bottle': {
+      const neckW=_n(ww*0.4), capH=_n(Math.min(H*0.1,12)), neckH=_n(H*0.24), bodyTop=_n(top+capH+neckH);
+      g+='<rect x="'+_n(cx-neckW/2)+'" y="'+_n(top+capH)+'" width="'+neckW+'" height="'+_n(neckH+4)+'" fill="#8fd0c0" stroke="#000" stroke-width="1.6"/>'; // neck
+      g+='<rect x="'+_n(cx-ww/2)+'" y="'+bodyTop+'" width="'+ww+'" height="'+_n(b-bodyTop)+'" rx="6" fill="#8fd0c0" stroke="#000" stroke-width="1.8"/>'; // body
+      g+='<rect x="'+_n(cx-neckW/2-2)+'" y="'+top+'" width="'+_n(neckW+4)+'" height="'+capH+'" rx="2" fill="#3f7d6e" stroke="#000" stroke-width="1.4"/>'; // cap
+      g+='<line x1="'+_n(cx-ww/2+5)+'" y1="'+_n(bodyTop+6)+'" x2="'+_n(cx-ww/2+5)+'" y2="'+_n(b-6)+'" stroke="#fff" stroke-width="2" opacity="0.7"/>'; // highlight
+      break; }
+    case 'lamp': {
+      const shTop=_n(Math.min(ww*0.55,30)), shBot=_n(ww), shadeH=_n(H*0.34), poleW=6, baseH=_n(Math.min(H*0.08,9)), baseW=_n(ww*0.8);
+      g+='<rect x="'+_n(cx-poleW/2)+'" y="'+_n(top+shadeH)+'" width="'+poleW+'" height="'+_n(b-(top+shadeH)-baseH)+'" fill="#b8a06a" stroke="#000" stroke-width="1.4"/>'; // pole
+      g+='<path d="M'+_n(cx-shTop/2)+','+top+' L'+_n(cx+shTop/2)+','+top+' L'+_n(cx+shBot/2)+','+_n(top+shadeH)+' L'+_n(cx-shBot/2)+','+_n(top+shadeH)+' Z" fill="#f4d99b" stroke="#000" stroke-width="1.6"/>'; // trapezoid shade
+      g+='<rect x="'+_n(cx-baseW/2)+'" y="'+_n(b-baseH)+'" width="'+baseW+'" height="'+baseH+'" rx="2" fill="#b8a06a" stroke="#000" stroke-width="1.6"/>'; // base
+      break; }
+    default: {  // fallback: rounded coloured bar
+      g+='<rect x="'+_n(cx-ww/2)+'" y="'+top+'" width="'+ww+'" height="'+_n(H)+'" rx="4" fill="'+PALETTE[0]+'" stroke="#000" stroke-width="2"/>';
+    }
+  }
+  g+='</g>'; return g;
+}
+
 /* ---------- SVG: cm ruler with an object bar drawn along it ---------- */
 // Geometry is exact: x(cm) = M + cm*CM. A bar from start..end has integer length (end-start) cm.
 function rulerSVG(maxCm, bars){
@@ -115,10 +254,11 @@ function rulerSVG(maxCm, bars){
     s+='<text class="rl-num" x="'+x+'" y="'+(rulerY+rulerH-15)+'">'+c+'</text>';
   }
   s+='<text class="rl-unit" x="'+(M+maxCm*CM-2)+'" y="'+(rulerY-4)+'">cm</text>';
-  // object bars, sitting ABOVE the ruler, aligned to the 0 mark and ending on a whole cm
+  // objects, sitting ABOVE the ruler, aligned to the 0 mark and ending on a whole cm.
+  // The object occupies exactly [x0,x1] so its right edge marks the true reading.
   bars.forEach((b,i)=>{
-    const y=top+i*barGap, x0=M+b.start*CM, x1=M+b.end*CM;
-    s+='<rect class="bar" x="'+x0+'" y="'+y+'" width="'+(x1-x0)+'" height="13" rx="2" fill="'+(b.fill||PALETTE[i%PALETTE.length])+'"/>';
+    const y=top+i*barGap, x0=M+b.start*CM, x1=M+b.end*CM, cy=y+6.5;
+    s+=drawObjH(b.kind, x0, cy, x1-x0);
     s+='<text class="barcap" x="'+(x1+5)+'" y="'+(y+11)+'">'+b.label+'</text>';
   });
   // a light drop-line from each bar's right end down to the ruler so the reading is unambiguous
@@ -129,23 +269,23 @@ function rulerSVG(maxCm, bars){
 
 /* ---------- SVG: free comparison bars (lengths exact via whole-cm grid) ---------- */
 // rows: [{label, len}] — len is an integer "cm" on a hidden grid so proportions are exact and honest.
-function barsSVG(rows, vertical){
-  const CM=22, padL=26, padT=14, gap=26, maxLen=Math.max.apply(null,rows.map(r=>r.len));
+function barsSVG(rows, vertical, kind){
+  const CM=22, padL=26, padT=16, gap=30, maxLen=Math.max.apply(null,rows.map(r=>r.len));
   if(vertical){
-    const baseY=10+maxLen*CM+6, colW=46, W=padL+rows.length*colW+10, H=baseY+26;
+    const baseY=10+maxLen*CM+6, colW=52, W=padL+rows.length*colW+10, H=baseY+26;
     let s='<svg class="barsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
     s+='<line x1="'+(padL-8)+'" y1="'+baseY+'" x2="'+(padL+rows.length*colW)+'" y2="'+baseY+'" stroke="#000" stroke-width="2"/>';
-    rows.forEach((r,i)=>{ const x=padL+i*colW+6, h=r.len*CM, y=baseY-h, w=30;
-      s+='<rect class="bar" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2" fill="'+(r.fill||PALETTE[i%PALETTE.length])+'"/>';
-      s+='<text class="barlabel" x="'+(x+w/2)+'" y="'+(baseY+18)+'" text-anchor="middle">'+r.label+'</text>';
+    rows.forEach((r,i)=>{ const colCentreX=padL+i*colW+colW/2, h=r.len*CM, w=34;
+      s+=drawObjV(kind, colCentreX, baseY, h, w);                    // object occupies exactly [baseY-h, baseY]
+      s+='<text class="barlabel" x="'+colCentreX+'" y="'+(baseY+18)+'" text-anchor="middle">'+r.label+'</text>';
     });
     s+='</svg>'; return s;
   }
   const W=padL+maxLen*CM+30, H=padT+rows.length*gap+6;
   let s='<svg class="barsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
-  s+='<line x1="'+padL+'" y1="'+(padT-4)+'" x2="'+padL+'" y2="'+(padT+rows.length*gap-6)+'" stroke="#000" stroke-width="2"/>';
-  rows.forEach((r,i)=>{ const y=padT+i*gap, w=r.len*CM;
-    s+='<rect class="bar" x="'+padL+'" y="'+y+'" width="'+w+'" height="15" rx="2" fill="'+(r.fill||PALETTE[i%PALETTE.length])+'"/>';
+  s+='<line x1="'+padL+'" y1="'+(padT-6)+'" x2="'+padL+'" y2="'+(padT+rows.length*gap-8)+'" stroke="#000" stroke-width="2"/>';
+  rows.forEach((r,i)=>{ const y=padT+i*gap, cy=y+8, len=r.len;
+    s+=drawObjH(kind, padL, cy, len*CM);                            // object occupies exactly [padL, padL+len*CM]
     s+='<text class="barlabel" x="'+(padL-16)+'" y="'+(y+13)+'">'+r.label+'</text>';
   });
   s+='</svg>'; return s;
@@ -158,11 +298,11 @@ const UNITS=[
   {name:'cubes', one:'cube', w:26, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><rect class="unit-ico" x="3" y="3" width="18" height="16" rx="2" fill="#bcd6f6"/></g>'},
   {name:'matchsticks', one:'matchstick', w:30, ico:(x,y)=>'<g transform="translate('+x+','+y+')"><rect class="unit-ico" x="3" y="8" width="22" height="5" rx="2" fill="#e7c9a0"/><circle class="unit-ico" cx="25" cy="10" r="3.5" fill="#c0392b"/></g>'},
 ];
-function nonstdSVG(obj, unit, K){
+function nonstdSVG(obj, unit, K, kind){
   const uw=unit.w, padL=14, padT=10, rowY=44, W=padL*2+K*uw+10, objW=K*uw, H=rowY+30;
   let s='<svg class="nonstd" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
-  // the object as a simple horizontal bar that spans exactly K units
-  s+='<rect class="bar" x="'+padL+'" y="'+padT+'" width="'+objW+'" height="16" rx="4" fill="'+obj.fill+'"/>';
+  // the object spans exactly K units wide so the unit count below stays honest
+  s+=drawObjH(kind, padL, padT+9, objW);
   s+='<text class="barcap" x="'+(padL)+'" y="'+(padT-1)+'">'+obj.label+'</text>';
   // the row of K identical unit icons under it, edge to edge from the left of the object
   for(let k=0;k<K;k++){ s+=unit.ico(padL+k*uw, rowY); }
@@ -192,8 +332,10 @@ function curvesSVG(rows){ // rows:[{label,kind}]
 }
 
 /* ---------- content pools ---------- */
-const RULER_OBJECTS=['pencil','crayon','ribbon','straw','leaf','stick','eraser','marker','feather','nail','candle','spoon'];
-const NONSTD_OBJECTS=['pencil','book','shoe','ribbon','crayon','spoon','leaf','straw','comb','key'];
+// horizontal shape keys (each has a drawObjH case)
+const HORIZ_SHAPES=['pencil','crayon','marker','ribbon','straw','stick','nail','candle','spoon','eraser','rope','lace'];
+const RULER_OBJECTS=HORIZ_SHAPES.slice();
+const NONSTD_OBJECTS=['pencil','crayon','marker','ribbon','straw','stick','spoon','eraser','rope','lace'];
 // benchmark objects with their true less/more-than-1-metre classification
 const BENCHMARK=[
   {name:'pencil', more:false}, {name:'spoon', more:false}, {name:'key', more:false},
@@ -210,11 +352,12 @@ const nonstdObjPick  = distinctBy(()=>pick(NONSTD_OBJECTS), x=>x);
 const nonstdUnitPick = balanced(UNITS.map((_,k)=>k)); // spread the 4 unit types
 const cmpVar         = balanced(['longer','shorter','taller']); // vary the question word
 const benchPick      = distinctBy(()=>pick(BENCHMARK), x=>x.name);
-// distinct nouns so compare/extremes questions read differently (their bars aren't in the dup signature)
-const HORIZ_NOUNS=['ribbon','rope','pencil','stick','straw','worm','crayon','snake','lace','wire','belt','twig'];
-const TALL_NOUNS=['tree','tower','plant','candle','pole','flower','lamp','bottle','ladder','rocket'];
+// distinct nouns so compare/extremes/order questions read differently (their bars aren't in the dup signature).
+// HORIZ_NOUNS are horizontal shape keys; TALL_NOUNS are the vertical shape keys.
+const HORIZ_NOUNS=['ribbon','rope','pencil','stick','straw','crayon','lace','marker','candle','spoon','nail','eraser'];
+const TALL_NOUNS=['tree','tower','bottle','lamp'];
 function makeNounPicker(){ const used=new Set(); return pool=>{ for(let g=0;g<40;g++){ const n=pick(pool); if(!used.has(n)){ used.add(n); return n; } } return pick(pool); }; }
-const cmpNoun=makeNounPicker(), extNoun=makeNounPicker();
+const cmpNoun=makeNounPicker(), extNoun=makeNounPicker(), ordNoun=makeNounPicker();
 
 /* ---------- generators ---------- */
 // 1. Measure with a ruler (0–10 cm). One or two bars.
@@ -224,7 +367,7 @@ function gRuler(i){
   let html='<div class="item"><span class="label">'+i+'.</span> Look at the centimetre ruler.';
   if(!twoBar){
     const len=randInt(3,9);                       // integer length 3..9 cm, fits 0..10
-    html+='<div class="lenvis barwrap">'+rulerSVG(10,[{start:0,end:len,label:'the '+obj}])+'</div>';
+    html+='<div class="lenvis barwrap">'+rulerSVG(10,[{start:0,end:len,label:'the '+obj,kind:obj}])+'</div>';
     html+='<div class="blanks"><div>The '+obj+' is '+ansIn(len)+' cm long.</div></div></div>';
     return html;
   }
@@ -234,8 +377,8 @@ function gRuler(i){
   const longLen=Math.max(a,b), shortLen=Math.min(a,b);
   const longObj=(a>=b)?obj:obj2, shortObj=(a>=b)?obj2:obj;
   html+='<div class="lenvis barwrap">'+rulerSVG(10,[
-      {start:0,end:a,label:'the '+obj},
-      {start:0,end:b,label:'the '+obj2}
+      {start:0,end:a,label:'the '+obj,kind:obj},
+      {start:0,end:b,label:'the '+obj2,kind:obj2}
     ])+'</div>';
   html+='<div class="blanks">'
     +'<div>The '+obj+' is '+ansIn(a)+' cm long.</div>'
@@ -252,7 +395,7 @@ function gNonstd(i){
   const K=randInt(3,7);
   const fill=PALETTE[i%PALETTE.length];
   let html='<div class="item"><span class="label">'+i+'.</span> Measure the '+obj+' with '+unit.name+'.';
-  html+='<div class="lenvis nonstdwrap">'+nonstdSVG({label:'the '+obj,fill:fill}, unit, K)+'</div>';
+  html+='<div class="lenvis nonstdwrap">'+nonstdSVG({label:'the '+obj,fill:fill}, unit, K, obj)+'</div>';
   html+='<div class="blanks"><div>The '+obj+' is as long as '+ansIn(K)+' '+unit.name+'.</div></div></div>';
   return html;
 }
@@ -265,8 +408,8 @@ function gCompare(i){
   const wantLong=(word!=='shorter');
   const target = wantLong ? (a>b?'A':'B') : (a<b?'A':'B');
   const rows=[{label:'A',len:a},{label:'B',len:b}];
-  const vis = vertical ? barsSVG(rows,true) : barsSVG(rows,false);
   const noun = vertical ? cmpNoun(TALL_NOUNS) : cmpNoun(HORIZ_NOUNS);
+  const vis = barsSVG(rows, vertical, noun);
   const opts=shuffle([{html:'A',ok:target==='A'},{html:'B',ok:target==='B'}]);
   let html='<div class="item"><span class="label">'+i+'.</span> Which '+noun+' is '+word+'?';
   html+='<div class="lenvis barwrap">'+vis+'</div>';
@@ -283,7 +426,7 @@ function gExtremes(i){
   rows.forEach(r=>{ if(r.len>longest.len) longest=r; if(r.len<shortest.len) shortest=r; });
   const noun=extNoun(HORIZ_NOUNS);
   let html='<div class="item"><span class="label">'+i+'.</span> Look at the four '+noun+'s.';
-  html+='<div class="lenvis barwrap">'+barsSVG(rows,false)+'</div>';
+  html+='<div class="lenvis barwrap">'+barsSVG(rows,false,noun)+'</div>';
   html+='<div class="blanks">'
     +'<div>The longest '+noun+' is '+letterIn(longest.label)+'.</div>'
     +'<div>The shortest '+noun+' is '+letterIn(shortest.label)+'.</div>'
@@ -298,10 +441,11 @@ function gOrder(i){
   const rows=LETTERS.slice(0,4).map((L,k)=>({label:L,len:lens[k]}));
   // sort letters by their bar length, shortest -> longest
   const sorted=rows.slice().sort((p,q)=>p.len-q.len).map(r=>r.label);
+  const noun=ordNoun(HORIZ_NOUNS);
   const tiles=shuffle(rows.map(r=>r.label)).map(L=>'<span class="dtile" data-val="'+L+'">'+L+'</span>').join('');
   const slots=sorted.map((L,k)=>'<span class="dslot" data-answer="'+L+'"></span>'+(k<sorted.length-1?'<span class="arrow" style="font-size:18pt;">&rarr;</span>':'')).join('');
-  let html='<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the strips into order, from the shortest to the longest.';
-  html+='<div class="lenvis barwrap">'+barsSVG(rows,false)+'</div>';
+  let html='<div class="item"><span class="label">'+i+'.</span> Drag (or tap) the '+noun+'s into order, from the shortest to the longest.';
+  html+='<div class="lenvis barwrap">'+barsSVG(rows,false,noun)+'</div>';
   html+='<div class="dorder"><div class="dsource">'+tiles+'</div><div class="dslots">'+slots+'</div></div></div>';
   return html;
 }
