@@ -14,6 +14,9 @@
   input.ans, input.wblank { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); }
   input.ans { width:60px; } input.wblank { width:92px; }
   input.boxin, input.bondin { width:44px; height:44px; border:2px solid var(--ink); box-sizing:border-box; text-align:center; font-size:20pt; font-family:inherit; background:transparent; color:var(--ink); }
+  /* widen every box in an equation when any of its numbers has 2+ digits */
+  .eq.wide .box, .eq.wide input.boxin { width:64px; }
+  .bond .node.whole.wide { width:64px; left:53px; }
   .eq { font-size:22pt; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
   .box { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border:2px solid var(--ink); box-sizing:border-box; font-size:20pt; }
   .pics { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px; max-width:48%; }
@@ -187,7 +190,7 @@ function qBond(i){
   const {a,b,sum}=pickAB();
   const bond='<div class="bond">'
     +'<svg viewBox="0 0 170 120"><line x1="85" y1="48" x2="41" y2="74" stroke="#000" stroke-width="2"/><line x1="85" y1="48" x2="129" y2="74" stroke="#000" stroke-width="2"/></svg>'
-    +'<div class="node whole">'+'<input class="bondin gradable" data-answer="'+sum+'" type="text" inputmode="numeric" autocomplete="off">'+'</div>'
+    +'<div class="node whole'+(String(sum).length>=2?' wide':'')+'">'+'<input class="bondin gradable" data-answer="'+sum+'" type="text" inputmode="numeric" autocomplete="off">'+'</div>'
     +'<div class="node pL">'+a+'</div><div class="node pR">'+b+'</div></div>';
   return '<div class="item"><div class="qwrap"><span class="eq"><span class="label">'+i+'.</span> '+a+' + '+b+' =</span>'+bond+'</div></div>';
 }
@@ -213,7 +216,7 @@ function qWord(i){
   let lines, eq;
   if(variant==='given'){ lines='How many '+n.many+' are there altogether?'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }
   else if(variant==='addmore'){ lines='There are '+a+' '+n.many+'. Add '+b+' more '+(b===1?n.one:n.many)+'.'; eq='<span class="eq">'+a+' + '+b+' = '+ansIn(sum)+'</span>'; }
-  else if(variant==='boxed'){ lines='How many '+n.many+' are there altogether?'; eq='<span class="eq">'+fbox(a)+' + '+fbox(b)+' = '+boxIn(sum)+'</span>'; }
+  else if(variant==='boxed'){ lines='How many '+n.many+' are there altogether?'; const wide=Math.max(String(a).length,String(b).length,String(sum).length)>=2; eq='<span class="eq'+(wide?' wide':'')+'">'+fbox(a)+' + '+fbox(b)+' = '+boxIn(sum)+'</span>'; }
   else { lines='There are '+a+' '+n.many+'. Add '+b+' more '+(b===1?n.one:n.many)+'.'; eq='<span class="eq">'+ansIn(a)+' + '+ansIn(b)+' = '+ansIn(sum)+'</span>'; }
   return '<div class="item"><span class="label">'+i+'.</span> '+lines
     +'<div class="qwrap">'+eq+twoGroups(n.cp,a,b)+'</div>'

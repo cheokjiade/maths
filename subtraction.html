@@ -23,6 +23,8 @@
   input.ans { width: 66px; }
   input.wblank { width: 96px; }
   input.boxin { width: 44px; height: 44px; border: 2px solid var(--ink); box-sizing: border-box; text-align: center; font-size: 22pt; font-family: inherit; background: transparent; color: var(--ink); }
+  /* widen every box in an equation when any of its numbers has 2+ digits */
+  .equation-boxes.wide input.boxin { width: 64px; }
   .helper { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px; max-width: 52%; }
   .obj { width: 32px; height: 32px; vertical-align: middle; margin: 0 1px; }
   .obj-sm { width: 26px; height: 26px; }
@@ -201,8 +203,10 @@ function sceneOrGroup(noun, count, small){ const inner = imgs(noun.cp, count, sm
 const ansIn    = a => '<span class="field"><input class="ans gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
 const wblankIn = a => '<span class="field"><input class="wblank gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
 const boxIn    = a => '<span class="field"><input class="boxin gradable" data-answer="' + a + '" type="text" inputmode="numeric" autocomplete="off"></span>';
-const boxesEq  = (a, b, c) =>
-  '<div class="equation-boxes">' + boxIn(a) + '<span class="op circle"></span>' + boxIn(b) + '<span class="equals">=</span>' + boxIn(c) + '</div>';
+const boxesEq  = (a, b, c) => {
+  const wide = Math.max(String(a).length, String(b).length, String(c).length) >= 2;
+  return '<div class="equation-boxes' + (wide ? ' wide' : '') + '">' + boxIn(a) + '<span class="op circle"></span>' + boxIn(b) + '<span class="equals">=</span>' + boxIn(c) + '</div>';
+};
 
 function actionLine(noun, S){
   const a = pickList(noun.actions);
