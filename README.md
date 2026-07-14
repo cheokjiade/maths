@@ -4,6 +4,8 @@ A small collection of self-contained static pages that generate printable maths 
 for young children. No build step, no dependencies — emoji pictures are bundled locally in
 `assets/twemoji/` (Twemoji, CC-BY 4.0), so everything works fully offline.
 
+**🔗 Live site:** <https://cheokjiade.github.io/maths/>
+
 - `index.html` — table of contents linking to each worksheet.
 - `subtraction.html` — the subtraction worksheet generator (details below).
 - `addition.html` — the addition worksheet generator (sums within 10): number bonds,
@@ -34,8 +36,9 @@ card for it in `index.html`.
 
 ## Use it
 
-Open `index.html` in a browser (or host it on GitHub Pages) and pick a topic. For subtraction,
-open `subtraction.html` directly or follow the link from the contents page.
+Open the [live site](https://cheokjiade.github.io/maths/) (hosted on GitHub Pages), or open
+`index.html` in a browser, and pick a topic. For subtraction, open `subtraction.html` directly
+or follow the link from the contents page.
 
 - **Generate** a worksheet from a **seed** — the same seed always produces the same sheet,
   so you can re-print or share an exact worksheet via its link.

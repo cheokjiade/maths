@@ -15,6 +15,8 @@
   input.ans { font:inherit; text-align:center; border:none; border-bottom:2px solid var(--ink); background:transparent; color:var(--ink); width:60px; }
   input.wblank { width:90px; }
   input.boxin { width:44px; height:44px; border:2px solid var(--ink); box-sizing:border-box; text-align:center; font-size:20pt; font-family:inherit; background:transparent; color:var(--ink); }
+  /* widen every box in an equation when any of its numbers has 2+ digits */
+  .eqbox.wide input.boxin { width:64px; }
   .eqbox { display:inline-flex; align-items:center; gap:8px; font-size:24pt; }
   .eqbox .op { width:44px; height:44px; border:2px solid var(--ink); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; }
   .eqbox .equals { font-weight:bold; padding:0 4px; }
@@ -92,7 +94,8 @@ let uid=0;
 const ansIn=a=>'<span class="field"><input class="ans gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
 const wbl=a=>'<span class="field"><input class="ans wblank gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
 const boxIn=a=>'<span class="field"><input class="boxin gradable" data-answer="'+a+'" type="text" inputmode="numeric" autocomplete="off"></span>';
-const eqboxOp=(a,b,c,op)=>'<div class="eqbox">'+boxIn(a)+'<span class="op">'+op+'</span>'+boxIn(b)+'<span class="equals">=</span>'+boxIn(c)+'</div>';
+const eqboxOp=(a,b,c,op)=>{ const wide=Math.max(String(a).length,String(b).length,String(c).length)>=2;
+  return '<div class="eqbox'+(wide?' wide':'')+'">'+boxIn(a)+'<span class="op">'+op+'</span>'+boxIn(b)+'<span class="equals">=</span>'+boxIn(c)+'</div>'; };
 function selBlock(target,opts){ const id='m'+(uid++); const chips=opts.map(o=>'<button type="button" class="chip" data-ok="'+(o.ok?1:0)+'">'+o.html+'</button>').join(''); return '<div class="item match-block" data-target="'+target+'" id="'+id+'"><div class="chips">'+chips+'</div></div>'; }
 
 /* ---- number helpers ---- */
